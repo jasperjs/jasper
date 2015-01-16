@@ -1,0 +1,25 @@
+{
+  "name": "jasper",
+  "version": "0.1.0",
+  "description": "Client library for jasper application",
+  "main": "gruntfile.js",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jasperjs/jasper.git"
+  },
+  "keywords": [
+    "angularjs",
+    "jasper",
+    "javascript",
+    "typescript"
+  ],
+  "author": "bukharin",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jasperjs/jasper/issues"
+  },
+  "homepage": "https://github.com/jasperjs/jasper"
+}
