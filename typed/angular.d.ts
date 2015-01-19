@@ -974,15 +974,6 @@ declare module ng {
 
     interface ICompileProvider extends IServiceProvider {
         directive(name: string, directiveFactory: Function): ICompileProvider;
-
-        // Undocumented, but it is there...
-        directive(directivesMap: any): ICompileProvider;
-
-        aHrefSanitizationWhitelist(): RegExp;
-        aHrefSanitizationWhitelist(regexp: RegExp): ICompileProvider;
-
-        imgSrcSanitizationWhitelist(): RegExp;
-        imgSrcSanitizationWhitelist(regexp: RegExp): ICompileProvider;
     }
 
     interface ICloneAttachFunction {

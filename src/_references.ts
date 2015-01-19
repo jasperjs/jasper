@@ -1,5 +1,4 @@
-﻿
-// CORE
+﻿// CORE
 
 /// <reference path="core/icomponentcontrollers.ts" />
 /// <reference path="core/ihtmlregistrar.ts" />
@@ -25,6 +24,9 @@
 /// <reference path="core/services/iservicedefinition.ts" />
 /// <reference path="core/services/serviceprovider.ts" />
 /// <reference path="core/services/serviceregistrar.ts" />
+
+/// <reference path="core/globalevents.ts" />
+/// <reference path="core/appcontext.ts" />
 
 /// <reference path="core/module.ts" />
 

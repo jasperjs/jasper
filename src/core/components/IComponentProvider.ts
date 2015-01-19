@@ -10,7 +10,7 @@
         private componentRegistar: IHtmlRegistrar<IHtmlComponentDefinition>;
 
         constructor($compileProvider: ng.ICompileProvider) {
-            this.componentRegistar = new jasper.core.HtmlComponentRegistrar($compileProvider);
+            this.componentRegistar = new core.HtmlComponentRegistrar($compileProvider);
         }
 
         register(component: IHtmlComponentDefinition) {

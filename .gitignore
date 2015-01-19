@@ -38,6 +38,10 @@ src/**/*.d.ts
 src/**/*.js
 src/**/*.map
 
+spec/**/*.js
+spec/**/*.d.ts
+spec/**/*.map
+
 Jasper.sln
 Jasper.csproj
 Properties

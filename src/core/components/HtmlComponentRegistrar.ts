@@ -12,7 +12,7 @@
 
         register(component: IHtmlComponentDefinition) {
             var ddo = this.createDirectiveFor(component);
-
+            
             if (ddo.controller) {
                 ddo.compile = () => {
                     return {
@@ -38,7 +38,7 @@
                     }
                 };
             }
-
+            
             this.directive(component.name, () => ddo);
         }
 
@@ -82,7 +82,7 @@
                     ctrl[attributeName] = val;
                     var methodName = attributeName + '_change';
                     if (ctrl[methodName] && angular.isFunction(ctrl[methodName])) {
-                        ctrl[methodName].call(val, oldVal);
+                        ctrl[methodName](val, oldVal);
                     }
                 });
                 scope.$watch(() => {
