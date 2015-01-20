@@ -139,9 +139,8 @@ var jasper;
                     restrict: 'E',
                     scope: this.getScopeDefinition(def)
                 };
-                var ctor = def.ctor || def.component;
-                if (ctor) {
-                    directive.controller = this.utility.getFactoryOf(ctor);
+                if (def.ctor) {
+                    directive.controller = this.utility.getFactoryOf(def.ctor);
                     directive.controllerAs = 'vm';
                 }
                 if (angular.isDefined(def.transclude))
@@ -271,12 +270,11 @@ var jasper;
                     restrict: 'A',
                     scope: false
                 };
-                var ctor = def.ctor || def.component;
-                if (!ctor) {
+                if (!def.ctor) {
                     throw new Error(def.name + ' must specify constructor');
                 }
                 directive.scope[def.name] = '=';
-                directive.controller = this.utility.getFactoryOf(ctor);
+                directive.controller = this.utility.getFactoryOf(def.ctor);
                 directive.require = this.getRequirementsForComponent(def);
                 directive.link = function (scope, element, attrs, controllers) {
                     var ctrls = _this.utility.getComponentControllers(controllers, directive);
@@ -369,11 +367,10 @@ var jasper;
                 this.utility = new core.UtilityService();
             }
             FilterRegistrar.prototype.register = function (def) {
-                var ctor = def.ctor || def.component;
-                if (!ctor) {
+                if (!def.ctor) {
                     throw new Error(def.name + ' must specify constructor');
                 }
-                var factory = this.utility.getFactoryOf(ctor);
+                var factory = this.utility.getFactoryOf(def.ctor);
                 this.filter(def.name, factory);
             };
             return FilterRegistrar;
@@ -411,11 +408,10 @@ var jasper;
                 this.utility = new core.UtilityService();
             }
             ServiceRegistrar.prototype.register = function (def) {
-                var ctor = def.ctor || def.component;
-                if (!ctor) {
+                if (!def.ctor) {
                     throw new Error(def.name + ' must specify constructor');
                 }
-                var factory = this.utility.getFactoryOf(ctor);
+                var factory = this.utility.getFactoryOf(def.ctor);
                 this.service(def.name, factory);
             };
             return ServiceRegistrar;
@@ -432,16 +428,18 @@ var jasper;
                 this.events = {};
             }
             GlobalEventsService.prototype.subscribe = function (eventName, listener) {
+                var _this = this;
                 if (!this.events[eventName])
                     this.events[eventName] = { queue: [] };
                 this.events[eventName].queue.push(listener);
                 return {
                     remove: function () {
-                        this.removeSubscription(eventName, listener);
+                        _this.removeSubscription(eventName, listener);
                     }
                 };
             };
             GlobalEventsService.prototype.broadcast = function (eventName) {
+                var _this = this;
                 var args = [];
                 for (var _i = 1; _i < arguments.length; _i++) {
                     args[_i - 1] = arguments[_i];
@@ -450,7 +448,7 @@ var jasper;
                     return;
                 var queue = this.events[eventName].queue;
                 queue.forEach(function (listener) {
-                    listener(args);
+                    listener.apply(_this, args);
                 });
             };
             GlobalEventsService.prototype.removeSubscription = function (eventName, listener) {

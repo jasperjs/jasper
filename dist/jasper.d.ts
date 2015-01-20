@@ -72,7 +72,6 @@ declare module jasper.core {
         templateUrl?: string;
         template?: string;
         ctor?: any;
-        component?: any;
         require?: any;
     }
 }
@@ -109,7 +108,6 @@ declare module jasper.core {
     interface IHtmlDecoratorDefinition {
         name: string;
         ctor: any;
-        component?: any;
         require?: any;
         eval?: boolean;
     }
@@ -138,14 +136,12 @@ declare module jasper.core {
     interface IFilterDefinition {
         name: string;
         ctor: any;
-        component: any;
     }
 }
 declare module jasper.core {
     interface IServiceDefinition {
         name: string;
         ctor: any;
-        component?: any;
     }
 }
 declare module jasper.core {

@@ -37,7 +37,7 @@
             this.events[eventName].queue.push(listener);
 
             return {
-                remove() {
+                remove: () => {
                     this.removeSubscription(eventName, listener);
                 }
             };
@@ -49,7 +49,7 @@
             var queue = this.events[eventName].queue;
 
             queue.forEach((listener) => {
-                listener(args);
+                listener.apply(this, args);
             });
         }
 
