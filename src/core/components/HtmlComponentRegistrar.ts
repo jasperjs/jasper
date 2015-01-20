@@ -43,32 +43,35 @@
         }
 
         private passPropertiesToCtrl(def: IHtmlComponentDefinition, scope: ng.IScope, ctrl: IHtmlComponent, attrs) {
-            if (def.attributes) {
-                var attributes = this.getPartsOf(def.attributes);
-                for (var i = 0; i < attributes.length; i++) {
-                    var attrName = attributes[i];
-                    if (angular.isDefined(attrs[attrName])) {
-                        this.setupCtrlValue(attrName, ctrl, scope, true);
+            if(!def.attributes)
+                return;
+            var attributes = this.getAttributes(def.attributes);
+
+            for (var i = 0; i < attributes.length; i++) {
+                var attrName = attributes[i].name;
+                var attrType = attributes[i].type || 'data';
+
+                var propertyName = this.utility.camelCaseTagName(attrName);
+
+                if (angular.isDefined(attrs[propertyName])) {
+
+                    switch (attrType.toUpperCase()){
+                        case 'DATA':
+                            this.setupCtrlValue(propertyName, ctrl, scope, true);
+                            break;
+                        case 'EXPR':
+                            ctrl[propertyName] = scope[propertyName];
+                            break;
+                        case 'TEXT':
+                            this.setupCtrlValue(propertyName, ctrl, scope, false);
+                            break;
+                        default:
+                            throw 'Unknown attribute type: ' + attrType
                     }
-                }
-            }
-            // pass plain text attributes
-            if (def.textAttributes) {
-                var textAttributes = this.getPartsOf(def.textAttributes);
-                for (var i = 0; i < textAttributes.length; i++) {
-                    var attrName = textAttributes[i];
-                    if (angular.isDefined(attrs[attrName])) {
-                        this.setupCtrlValue(attrName, ctrl, scope, false);
-                    }
+
                 }
             }
 
-            if (def.expressions) {
-                var exprs = this.getPartsOf(def.expressions);
-                for (var i = 0; i < exprs.length; i++) {
-                    ctrl[exprs[i]] = scope[exprs[i]];
-                }
-            }
         }
 
         private setupCtrlValue(attributeName: string
@@ -121,23 +124,27 @@
 
         private getScopeDefinition(def: IHtmlComponentDefinition) {
             var scope = {};
-            if (def.attributes) {
-                var attrs = this.getPartsOf(def.attributes);
-                for (var i = 0; i < attrs.length; i++) {
-                    scope[attrs[i]] = '=';
+            if(!def.attributes)
+                return scope;
+
+            var attrs = this.getAttributes(def.attributes);
+            for (var i = 0; i < attrs.length; i++) {
+                if(!attrs[i].name){
+                    throw 'Attribute name not specified of: ' + JSON.stringify(attrs[i]);
                 }
-            }
-            if (def.textAttributes) {
-                var textAttrs = this.getPartsOf(def.textAttributes);
-                for (var i = 0; i < textAttrs.length; i++) {
-                    scope[textAttrs[i]] = '@';
+
+                var angularBinding = '=';
+                var type = attrs[i].type || 'data';
+                switch (type.toUpperCase()) {
+                    case 'EXPR':
+                        angularBinding= '&';
+                        break;
+                    case 'TEXT':
+                        angularBinding = '@';
+                        break;
                 }
-            }
-            if (def.expressions) {
-                var exprs = this.getPartsOf(def.expressions);
-                for (var i = 0; i < exprs.length; i++) {
-                    scope[exprs[i]] = '&';
-                }
+                var camelCaseAttrName = this.utility.camelCaseTagName(attrs[i].name);
+                scope[camelCaseAttrName] = angularBinding;
             }
             return scope;
         }
@@ -156,12 +163,23 @@
             }
         }
 
-        private getPartsOf(source: string): string[] {
-            var parts = source.split(' ');
-            for (var i = 0; i < parts.length; i++) {
-                parts[i] = this.utility.camelCaseTagName(parts[i]);
+        private getAttributes(attributes: any): IAttributeBinding[] {
+            var result: IAttributeBinding[] = [];
+
+            if (angular.isString(attributes)){
+                var parts = attributes.split(' ');
+                for (var i = 0; i < parts.length; i++) {
+                    result.push({
+                        type: 'data',
+                        name: parts[i]
+                    })
+                }
+                return result;
+            } else if(angular.isArray(attributes)) {
+                return attributes;
             }
-            return parts;
+            throw 'Unknown format of "attributes" binding: ' + attributes;
+
         }
 
     }

@@ -48,7 +48,7 @@
     it('Test text attributes for html component registration', () => {
         var definition: jasper.core.IHtmlComponentDefinition = {
             name: 'myElement',
-            textAttributes: 'test-attr color'
+            attributes: [{ name: 'test-attr',  type: 'text' }, { name: 'color', type:'text' }]
         }
         var ddo = registerDefinitionObject(definition);
 
@@ -59,7 +59,7 @@
     it('Test expression attributes for html component registration', () => {
         var definition: jasper.core.IHtmlComponentDefinition = {
             name: 'myElement',
-            expressions: 'my-expr color'
+            attributes: [{ name: 'my-expr',  type: 'expr' }, { name: 'color', type:'expr' }]
         }
         var ddo = registerDefinitionObject(definition);
 
@@ -163,7 +163,10 @@
         var definition: jasper.core.IHtmlComponentDefinition = {
             name: 'someTag',
             ctor: component,
-            textAttributes:'some-attr',
+            attributes: [{
+                type:'text',
+                name: 'some-attr'
+            }],
             template: '<p>hello {{vm.someAttr}}</p>'
         };
         registerDefinitionObject(definition);
@@ -185,7 +188,10 @@
         var definition: jasper.core.IHtmlComponentDefinition = {
             name: 'someTag',
             ctor: component,
-            expressions:'some-expr',
+            attributes: [{
+                    name: 'some-expr',
+                    type: 'expr'
+                }],
             template: '<p>hello</p>'
         };
         registerDefinitionObject(definition);

@@ -31,7 +31,6 @@ _ReSharper*/
 *.backup
 *.gitattributes
 
-dist
 node_modules
 
 src/**/*.d.ts

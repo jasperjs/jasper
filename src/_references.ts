@@ -7,6 +7,7 @@
 /// <reference path="core/components/htmlcomponentregistrar.ts" />
 /// <reference path="core/components/icomponentprovider.ts" />
 /// <reference path="core/components/ihtmlcomponent.ts" />
+/// <reference path="core/components/IAttributeBinding.ts" />
 /// <reference path="core/components/ihtmlcomponentdifinition.ts" />
 
 
