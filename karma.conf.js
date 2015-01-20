@@ -12,7 +12,7 @@ module.exports = function(config) {
             'vendor/angularjs/angular.min.js',
             'vendor/angularjs/angular-route.min.js',
             'vendor/angularjs/angular-mocks.js',
-            'src/**/*.js',
+            'dist/jasper.js',
             'test/mocks.js',
             'test/**/*.tests.js'
         ],
