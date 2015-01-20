@@ -40,7 +40,6 @@
          * Instance of this object will be available as 'vm' object in the template.
          **/
         ctor?: any;
-        component?: any;
 
         /*
          * Setup that this component need a dependency of another component.

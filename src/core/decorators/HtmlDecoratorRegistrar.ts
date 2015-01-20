@@ -21,13 +21,12 @@
                 scope: false
             };
 
-            var ctor = def.ctor || def.component;
-            if (!ctor) {
+            if (!def.ctor) {
                 throw new Error(def.name + ' must specify constructor');
             }
 
             directive.scope[def.name] = '=';
-            directive.controller = this.utility.getFactoryOf(ctor);
+            directive.controller = this.utility.getFactoryOf(def.ctor);
             directive.require = this.getRequirementsForComponent(def);
 
             directive.link = (scope: ng.IScope, element: JQuery, attrs: ng.IAttributes, controllers: any) => {

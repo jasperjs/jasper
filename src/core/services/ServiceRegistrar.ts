@@ -11,12 +11,11 @@
         }
 
         register(def: IServiceDefinition) {
-            var ctor = def.ctor || def.component;
-            if (!ctor) {
+            if (!def.ctor) {
                 throw new Error(def.name + ' must specify constructor');
             }
 
-            var factory = this.utility.getFactoryOf(ctor);
+            var factory = this.utility.getFactoryOf(def.ctor);
             this.service(def.name, factory);
         }
 

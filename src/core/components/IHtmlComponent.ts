@@ -1,6 +1,26 @@
 ﻿module jasper {
     /*
      * Represent html component 'code-behind' instance.
+     *
+     * This object also can contain method of changing each attribute specified in 'attributes' property of a definition
+     *
+     * <attributeName>_change(newValue, oldValue) {
+     *      // this method invokes, when <attributeName> changes
+     * }
+     *
+     * Example:
+     *
+     * class ColorPicker {
+     *
+     *      selectedColor: string;
+     *
+     *      ...
+     *
+     *      selectedColor_change(newColor: string, oldColor: string) {
+     *          console.log('color changed to', newColor);
+     *      }
+     *
+     * }
      **/
     export interface IHtmlComponent {
         /*

@@ -102,9 +102,8 @@
                 scope: this.getScopeDefinition(def)
             };
 
-            var ctor = def.ctor || def.component;
-            if (ctor) {
-                directive.controller = this.utility.getFactoryOf(ctor);
+            if (def.ctor) {
+                directive.controller = this.utility.getFactoryOf(def.ctor);
                 directive.controllerAs = 'vm';
             }
 
