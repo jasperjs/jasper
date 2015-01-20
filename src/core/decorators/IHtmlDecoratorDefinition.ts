@@ -1,4 +1,4 @@
-﻿module jasper {
+﻿module jasper.core {
     export interface IHtmlDecoratorDefinition {
         // name of component
         name: string;

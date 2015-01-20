@@ -1,7 +1,7 @@
 ﻿module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-typescript');
     grunt.loadNpmTasks('grunt-contrib-uglify');
-    grunt.loadNpmTasks('grunt-contrib-jasmine');
+    grunt.loadNpmTasks('grunt-karma');
 
     grunt.initConfig({
         dist: 'dist',
@@ -26,7 +26,7 @@
                 }
             },
             tests: {
-                src: ['src/_references.ts'],
+                src: ['src/_references.ts', 'test/**/*.ts'],
                 options: {
                     module: 'amd', //or commonjs
                     target: 'es5', //or es3
@@ -34,29 +34,21 @@
                     declaration: false,
                     references: [
                         'typed/angular.d.ts',
+                        'typed/angular-mocks.d.ts',
                         'typed/jasmine.d.ts'
                     ]
                 }
             }
         },
-        jasmine: {
-            pivotal: {
-                src: [
-                    'vendor/angularjs/angular.min.js',
-                    'vendor/angularjs/angular-route.min.js',
-                    'vendor/angularjs/angular-mocks.js',
-                    'src/**/*.js'
-                ],
-                options: {
-                    specs: 'spec/**/*.js'
-                    /* helpers: 'spec/*Helper.js'*/
-                }
+        karma: {
+            unit: {
+                configFile: 'karma.conf.js'
             }
         }
     });
 
     grunt.registerTask('default', ['typescript', 'uglify']);
 
-    grunt.registerTask('test', ['typescript:tests', 'jasmine']);
+    grunt.registerTask('test', ['typescript:tests', 'karma']);
 
 };

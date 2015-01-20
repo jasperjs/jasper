@@ -21,11 +21,11 @@
                             this.passPropertiesToCtrl(component, scope, ctrls.main, attrs);
 
                             if (ctrls.main.initializeComponent && angular.isFunction(ctrls.main.initializeComponent))
-                                ctrls.main.initializeComponent.call();
+                                ctrls.main.initializeComponent();
 
-                            if (ctrls.main.disposeComponent && angular.isFunction(ctrls.main.disposeComponent)) {
+                            if (ctrls.main.destroyComponent && angular.isFunction(ctrls.main.destroyComponent)) {
                                 scope.$on('$destroy', () => {
-                                    ctrls.main.disposeComponent.call();
+                                    ctrls.main.destroyComponent();
                                 });
                             }
                         },

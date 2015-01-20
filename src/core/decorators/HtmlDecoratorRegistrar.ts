@@ -49,6 +49,13 @@
                         ctrls.main.onValueChanged(newValue, oldValue);
                     });
                 }
+
+                if (ctrls.main.destroyComponent && angular.isFunction(ctrls.main.destroyComponent)) {
+                    // when element is destroyed - invoke component method
+                    element.on('$destroy', () => {
+                        ctrls.main.destroyComponent();
+                    });
+                }
             };
 
             return directive;
