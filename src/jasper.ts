@@ -26,11 +26,13 @@ module jasper {
             , 'jasperDecoratorProvider'
             , 'jasperServiceProvider'
             , 'jasperFilterProvider'
+            , 'jasperValueProvider'
             , '$compileProvider',
             (jasperComponents: jasper.core.IComponentProvider
                 , jasperDecorators: jasper.core.IDecoratorComponentProvider
                 , jasperServices: jasper.core.IServiceProvider
                 , jasperFilters: jasper.core.IFilterProvider
+                , jasperValues: jasper.core.IValueProvider
                 , $compileProvider: ng.ICompileProvider) => {
 
                 window['jsp'] = {
@@ -38,8 +40,10 @@ module jasper {
                     decorator: def => jasperDecorators.register(def),
                     service: def => jasperServices.register(def),
                     filter: def => jasperFilters.register(def),
+                    value: (name, value) => jasperValues.register(name, value),
                     directive: $compileProvider.directive
                 };
+
             }]).run(['jasperAreasService', '$templateCache',
             (jasperAreasService: jasper.areas.JasperAreasService, $templateCache: ng.ITemplateCacheService) => {
                 window['jsp'].areas = jasperAreasService;

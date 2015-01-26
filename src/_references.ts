@@ -26,8 +26,10 @@
 /// <reference path="core/services/serviceprovider.ts" />
 /// <reference path="core/services/serviceregistrar.ts" />
 
+/// <reference path="core/values/ValueProvider.ts" />
+
 /// <reference path="core/globalevents.ts" />
-/// <reference path="core/appcontext.ts" />
+/// <reference path="core/jaspercomponent.ts" />
 
 /// <reference path="core/module.ts" />
 

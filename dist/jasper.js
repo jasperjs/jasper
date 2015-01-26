@@ -73,6 +73,7 @@ var jasper;
                             pre: function (scope, element, attrs, controllers, tranclude) {
                                 var ctrls = _this.utility.getComponentControllers(controllers, ddo);
                                 _this.passPropertiesToCtrl(component, scope, ctrls.main, attrs);
+                                ctrls.main.$$scope = scope;
                                 if (ctrls.main.initializeComponent && angular.isFunction(ctrls.main.initializeComponent))
                                     ctrls.main.initializeComponent();
                                 if (ctrls.main.destroyComponent && angular.isFunction(ctrls.main.destroyComponent)) {
@@ -278,6 +279,7 @@ var jasper;
                 directive.require = this.getRequirementsForComponent(def);
                 directive.link = function (scope, element, attrs, controllers) {
                     var ctrls = _this.utility.getComponentControllers(controllers, directive);
+                    ctrls.main.$$scope = scope;
                     var attrExpr = attrs[def.name];
                     var eval = angular.isDefined(def.eval) ? def.eval : true;
                     var value = undefined;
@@ -423,6 +425,26 @@ var jasper;
 (function (jasper) {
     var core;
     (function (core) {
+        var ValueProvider = (function () {
+            function ValueProvider(provide) {
+                this.provide = provide;
+            }
+            ValueProvider.prototype.register = function (name, value) {
+                this.provide.value(name, value);
+            };
+            ValueProvider.prototype.$get = function () {
+                return this;
+            };
+            ValueProvider.$inject = ['$provide'];
+            return ValueProvider;
+        })();
+        core.ValueProvider = ValueProvider;
+    })(core = jasper.core || (jasper.core = {}));
+})(jasper || (jasper = {}));
+var jasper;
+(function (jasper) {
+    var core;
+    (function (core) {
         var GlobalEventsService = (function () {
             function GlobalEventsService() {
                 this.events = {};
@@ -471,23 +493,25 @@ var jasper;
 (function (jasper) {
     var core;
     (function (core) {
-        var AppContext = (function () {
-            function AppContext(rootScope) {
-                this.rootScope = rootScope;
+        var JasperComponent = (function () {
+            function JasperComponent() {
             }
-            AppContext.prototype.digest = function (element) {
-                angular.element(element).scope().$digest();
+            JasperComponent.prototype.$digest = function () {
+                if (!this.$$scope)
+                    throw '$$scope not initialized';
+                this.$$scope.$digest();
             };
-            AppContext.prototype.apply = function () {
-                this.rootScope.$apply();
+            JasperComponent.prototype.$apply = function () {
+                if (!this.$$scope)
+                    throw '$$scope not initialized';
+                this.$$scope.$apply();
             };
-            AppContext.$inject = ['$rootScope'];
-            return AppContext;
+            return JasperComponent;
         })();
-        core.AppContext = AppContext;
+        core.JasperComponent = JasperComponent;
     })(core = jasper.core || (jasper.core = {}));
 })(jasper || (jasper = {}));
-angular.module('jasperCore', ['ng']).provider('jasperComponent', jasper.core.ComponentProvider).provider('jasperDecorator', jasper.core.DecoratorComponentProvider).provider('jasperService', jasper.core.ServiceProvider).provider('jasperFilter', jasper.core.FilterProvider).service('$globalEvents', jasper.core.GlobalEventsService).service('$appContext', jasper.core.AppContext);
+angular.module('jasperCore', ['ng']).provider('jasperComponent', jasper.core.ComponentProvider).provider('jasperDecorator', jasper.core.DecoratorComponentProvider).provider('jasperService', jasper.core.ServiceProvider).provider('jasperFilter', jasper.core.FilterProvider).provider('jasperValue', jasper.core.ValueProvider).service('$globalEvents', jasper.core.GlobalEventsService);
 var jasper;
 (function (jasper) {
     var areas;
@@ -817,12 +841,13 @@ var jasper;
         'jasperCore',
         'jasperAreas',
         'jasperRoutes'
-    ]).config(['jasperComponentProvider', 'jasperDecoratorProvider', 'jasperServiceProvider', 'jasperFilterProvider', '$compileProvider', function (jasperComponents, jasperDecorators, jasperServices, jasperFilters, $compileProvider) {
+    ]).config(['jasperComponentProvider', 'jasperDecoratorProvider', 'jasperServiceProvider', 'jasperFilterProvider', 'jasperValueProvider', '$compileProvider', function (jasperComponents, jasperDecorators, jasperServices, jasperFilters, jasperValues, $compileProvider) {
         window['jsp'] = {
             component: function (def) { return jasperComponents.register(def); },
             decorator: function (def) { return jasperDecorators.register(def); },
             service: function (def) { return jasperServices.register(def); },
             filter: function (def) { return jasperFilters.register(def); },
+            value: function (name, value) { return jasperValues.register(name, value); },
             directive: $compileProvider.directive
         };
     }]).run(['jasperAreasService', '$templateCache', function (jasperAreasService, $templateCache) {
@@ -851,8 +876,9 @@ var jasper;
 /// <reference path="core/services/iservicedefinition.ts" />
 /// <reference path="core/services/serviceprovider.ts" />
 /// <reference path="core/services/serviceregistrar.ts" />
+/// <reference path="core/values/ValueProvider.ts" />
 /// <reference path="core/globalevents.ts" />
-/// <reference path="core/appcontext.ts" />
+/// <reference path="core/jaspercomponent.ts" />
 /// <reference path="core/module.ts" />
 // AREAS
 /// <reference path="areas/jasperareadirective.ts" />

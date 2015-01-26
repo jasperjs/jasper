@@ -11,10 +11,29 @@ declare module jasper.core {
 }
 declare module jasper.core {
     interface IUtilityService {
+        /**
+         * Split requirement for two part - main directive controller and require controllers
+         */
         getComponentControllers(controllers: any, directive: ng.IDirective): IComponentControllers;
+        /**
+         * Create instance of component
+         * @param component {function|string}
+         */
         getFactoryOf(component: any): Function;
+        /**
+         * Convert string to snake case format: sampleText --> sample-text
+         * @param source - value to convert
+         */
         snakeCase(source: string): string;
+        /**
+         * Convert to camelCase format: SampleText --> sampleText
+         * @param source - value to convert
+         */
         camelCase(source: string): string;
+        /**
+         * Convert tag-name to camelCase: some-tag --> someTag
+         * @param source - value to convert
+         */
         camelCaseTagName(source: string): string;
     }
     class UtilityService implements IUtilityService {
@@ -52,9 +71,47 @@ declare module jasper.core {
     }
 }
 declare module jasper {
+    /**
+     * Represents html component 'code-behind' instance.
+     *
+     * This object also can contain method of changing each attribute specified in 'attributes' property of a definition
+     *
+     * <attributeName>_change(newValue, oldValue) {
+     *      // this method invokes, when <attributeName> changes
+     * }
+     *
+     * Example:
+     *
+     * class ColorPicker {
+     *
+     *      selectedColor: string;
+     *
+     *      ...
+     *
+     *      selectedColor_change(newColor: string, oldColor: string) {
+     *          console.log('color changed to', newColor);
+     *      }
+     *
+     * }
+     */
     interface IHtmlComponent {
+        /**
+         * Jasper invoke this method, during angular's link phase - when component associates with
+         * own html DOM element
+         *
+         * @element - html element
+         * @components - array or single components, that will be required by 'require' property of component definition
+         */
         link?: (element?: HTMLElement, components?: any) => void;
+        /**
+         * Jasper invoke this method, when all attributes of current component instance are filled
+         * You can place logic of initialization here
+         */
         initializeComponent?(): any;
+        /**
+         * Jasper invoke this method, when component was removed from application
+         * You can place here logic of cleanup
+         */
         destroyComponent?(): any;
     }
 }
@@ -66,12 +123,45 @@ declare module jasper.core {
 }
 declare module jasper.core {
     interface IHtmlComponentDefinition {
+        /**
+         * Setup the name of component. Name reflects the html element tag-name
+         * Need to be specified using camelCase
+         */
         name: string;
+        /**
+         * Setup transclusing of the component.
+         * boolean|string
+         */
         transclude?: any;
+        /**
+         * Attributes to bind to the component. string|array
+         * Each attribute can be on of three types:
+         *      'data' (angular '=' binding), 'expr' ('&') and 'text' ('@')
+         *
+         * Attributes can be provided as space separated string, like 'one-attribute two attribute'
+         * - in this case jasper adds 'data' binding for each specified attribute
+         * or as array, by specifying name and type of each one:
+         * - attributes: [ { name: 'one-attribute', type: 'data' }, { name: 'on-updated', type: 'expr'} ]
+         */
         attributes?: any;
+        /**
+         * Setup template url address of the component
+         */
         templateUrl?: string;
+        /**
+         * Setup inline html template of the component
+         */
         template?: string;
+        /**
+         * Setup the 'code-behind' object constructor of the component.
+         * Jasper associate instance of the object with component template.
+         * Instance of this object will be available as 'vm' object in the template.
+         */
         ctor?: any;
+        /**
+         * Setup that this component need a dependency of another component.
+         * Referenced components will be available in the 'link' method of the component.
+         */
         require?: any;
     }
 }
@@ -106,9 +196,26 @@ declare module jasper {
 }
 declare module jasper.core {
     interface IHtmlDecoratorDefinition {
+        /**
+         * Setup the name of decorator. Name reflects the html element attribute name
+         * Need to be specified using camelCase
+         */
         name: string;
+        /**
+         * Setup the 'code-behind' object constructor of the decorator.
+         * Contains decorator logic
+         * Instance of this object will be available as 'vm' object in the template.
+         */
         ctor: any;
+        /**
+         * Setup that this decorator needs a dependency of another component or decorator within html element.
+         * Referenced components|decorator will be available in the 'link' method of the decorator.
+         */
         require?: any;
+        /**
+         * Setup that jasper need to evaluate associated attribute value.
+         * If true jasper assign evaluated result of decorator expression
+         */
         eval?: boolean;
     }
 }
@@ -134,13 +241,25 @@ declare module jasper.core {
 }
 declare module jasper.core {
     interface IFilterDefinition {
+        /**
+         * Setup the name of filter. Filter can be used, like {{ someExpression | <name> }}
+         */
         name: string;
+        /**
+         * Setup filter's class constructor
+         */
         ctor: any;
     }
 }
 declare module jasper.core {
     interface IServiceDefinition {
+        /**
+         * Setup the name of service. Service can be injected as '<name>'
+         */
         name: string;
+        /**
+         * Setup service constructor
+         */
         ctor: any;
     }
 }
@@ -165,11 +284,34 @@ declare module jasper.core {
     }
 }
 declare module jasper.core {
+    interface IValueProvider {
+        register(name: string, value: any): any;
+    }
+    class ValueProvider implements IValueProvider, ng.IServiceProvider {
+        private provide;
+        static $inject: string[];
+        constructor(provide: any);
+        register(name: string, value: any): void;
+        $get(): ValueProvider;
+    }
+}
+declare module jasper.core {
     interface ISubscription {
         remove(): any;
     }
     interface IGlobalEventsService {
+        /**
+         * Subscribe on event. Do not forget to call 'remove' method, when you no longer need the subscription
+         *
+         * @param eventName - name of the event for notification
+         * @param listener - callback for notification
+         */
         subscribe(eventName: string, listener: (...args: any[]) => void): ISubscription;
+        /**
+         * Broadcast event for all subscribers
+         *
+         * @param eventName - name of the event for notification
+         */
         broadcast(eventName: string, ...args: any[]): any;
     }
     class GlobalEventsService implements IGlobalEventsService {
@@ -180,16 +322,10 @@ declare module jasper.core {
     }
 }
 declare module jasper.core {
-    interface IAppContext {
-        digest(element: HTMLElement): any;
-        apply(): any;
-    }
-    class AppContext implements IAppContext {
-        private rootScope;
-        static $inject: string[];
-        constructor(rootScope: ng.IScope);
-        digest(element: HTMLElement): void;
-        apply(): void;
+    class JasperComponent {
+        private $$scope;
+        protected $digest(): void;
+        protected $apply(): void;
     }
 }
 declare module jasper.areas {

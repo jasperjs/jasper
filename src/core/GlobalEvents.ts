@@ -5,15 +5,17 @@
     }
 
     export interface IGlobalEventsService {
-        /*
+        /**
          * Subscribe on event. Do not forget to call 'remove' method, when you no longer need the subscription
-         * @param eventName: name of the event for notification
-         * @param listener: callback for notification
+         *
+         * @param eventName - name of the event for notification
+         * @param listener - callback for notification
          */
         subscribe(eventName: string, listener: (...args: any[]) => void): ISubscription;
-        /*
+        /**
          * Broadcast event for all subscribers
-         * @param eventName: name of the event for notification
+         *
+         * @param eventName - name of the event for notification
          */
         broadcast(eventName: string, ...args: any[]);
     }

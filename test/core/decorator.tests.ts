@@ -100,4 +100,25 @@
 
     }));
 
+
+    it('Test decorator component $$scope assign', inject(($compile, $rootScope) => {
+
+        var componentScope: ng.IScope;
+        // test component
+        var component = function() {
+            this.someAttr = '';
+            this.link = function() {
+                componentScope = this['$$scope'];
+            };
+        };
+        var definition: jasper.core.IHtmlDecoratorDefinition = {
+            name: 'myAttribute',
+            ctor: component
+        }
+        registerDefinitionObject(definition);
+        var scope = $rootScope.$new();
+        $compile('<div my-attribute="\'test\'"></div>')(scope);
+        expect(componentScope).toBeDefined();
+    }));
+
 });

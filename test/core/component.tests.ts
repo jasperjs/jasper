@@ -150,6 +150,28 @@
         expect(attrValue).toEqual('test');
     }));
 
+    it('Test component $$scope assign', inject(($compile, $rootScope) => {
+
+        var componentScope: ng.IScope;
+        // test component
+        var component = function() {
+            this.someAttr = '';
+            this.initializeComponent = function() {
+                componentScope = this['$$scope'];
+            };
+        };
+        var definition: jasper.core.IHtmlComponentDefinition = {
+            name: 'someTagCtor',
+            ctor: component,
+            attributes:'some-attr',
+            template: '<p>hello {{vm.someAttr}}</p>'
+        };
+        registerDefinitionObject(definition);
+        $compile('<some-tag-ctor></some-tag-ctor>')($rootScope.$new());
+
+        expect(componentScope).toBeDefined();
+    }));
+
 
     it('Test component text attributes binding', inject(($compile, $rootScope) => {
         var attrValue;

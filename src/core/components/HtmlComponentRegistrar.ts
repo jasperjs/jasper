@@ -20,6 +20,8 @@
                             var ctrls = this.utility.getComponentControllers(controllers, ddo);
                             this.passPropertiesToCtrl(component, scope, ctrls.main, attrs);
 
+                            ctrls.main.$$scope = scope;
+
                             if (ctrls.main.initializeComponent && angular.isFunction(ctrls.main.initializeComponent))
                                 ctrls.main.initializeComponent();
 

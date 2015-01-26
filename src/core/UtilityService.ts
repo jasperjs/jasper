@@ -1,15 +1,29 @@
 ﻿module jasper.core {
 
     export interface IUtilityService {
+        /**
+         * Split requirement for two part - main directive controller and require controllers
+         */
         getComponentControllers(controllers, directive: ng.IDirective): IComponentControllers;
-
+        /**
+         * Create instance of component
+         * @param component {function|string}
+         */
         getFactoryOf(component: any): Function;
-
-        // sampleText --> sample-text
+        /**
+         * Convert string to snake case format: sampleText --> sample-text
+         * @param source - value to convert
+         */
         snakeCase(source: string): string;
-        // sampleText --> SampleText
+        /**
+         * Convert to camelCase format: SampleText --> sampleText
+         * @param source - value to convert
+         */
         camelCase(source: string): string;
-        // some-tag --> someTag
+        /**
+         * Convert tag-name to camelCase: some-tag --> someTag
+         * @param source - value to convert
+         */
         camelCaseTagName(source: string): string;
     }
 
