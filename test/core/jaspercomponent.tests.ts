@@ -22,4 +22,12 @@ describe('JasperComponent tests', () => {
         expect(scope.$apply).toHaveBeenCalled();
 
     }));
+
+    it('Test angularJs event registration', inject(($rootScope: ng.IScope) => {
+        var scope = $rootScope.$new();
+        spyOn(scope,'$on').and.callThrough();
+        component['$$scope'] = scope;
+        component['$on']('eventName', ()=>{});
+        expect(scope.$on).toHaveBeenCalled();
+    }));
 });
