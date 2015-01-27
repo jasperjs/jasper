@@ -19,8 +19,9 @@
     var directiveFactory;
 
     beforeEach(() => {
-        module(function($compileProvider) {
+        module(function($compileProvider, $provide) {
             directiveFactory = $compileProvider.directive;
+            console.log($provide);
         });
         compileProvider = new jasper.mocks.TestCompileProvider();
     });
@@ -37,7 +38,10 @@
     it('Test attributes for html component registration', () => {
         var definition: jasper.core.IHtmlComponentDefinition = {
             name: 'myElement',
-            attributes: 'test-attr color'
+            attributes: [
+                { name: 'test-attr' },
+                { name: 'color' }
+            ]
         }
         var ddo = registerDefinitionObject(definition);
 
@@ -140,7 +144,7 @@
         var definition: jasper.core.IHtmlComponentDefinition = {
             name: 'someTagCtor',
             ctor: component,
-            attributes:'some-attr',
+            attributes:[{name: 'some-attr'}],
             template: '<p>hello {{vm.someAttr}}</p>'
         };
         registerDefinitionObject(definition);
@@ -163,7 +167,7 @@
         var definition: jasper.core.IHtmlComponentDefinition = {
             name: 'someTagCtor',
             ctor: component,
-            attributes:'some-attr',
+            attributes:[{name: 'some-attr'}],
             template: '<p>hello {{vm.someAttr}}</p>'
         };
         registerDefinitionObject(definition);

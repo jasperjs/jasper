@@ -47,11 +47,10 @@
         private passPropertiesToCtrl(def: IHtmlComponentDefinition, scope: ng.IScope, ctrl: IHtmlComponent, attrs) {
             if(!def.attributes)
                 return;
-            var attributes = this.getAttributes(def.attributes);
 
-            for (var i = 0; i < attributes.length; i++) {
-                var attrName = attributes[i].name;
-                var attrType = attributes[i].type || 'data';
+            for (var i = 0; i < def.attributes.length; i++) {
+                var attrName = def.attributes[i].name;
+                var attrType = def.attributes[i].type || 'data';
 
                 var propertyName = this.utility.camelCaseTagName(attrName);
 
@@ -128,14 +127,14 @@
             if(!def.attributes)
                 return scope;
 
-            var attrs = this.getAttributes(def.attributes);
-            for (var i = 0; i < attrs.length; i++) {
-                if(!attrs[i].name){
-                    throw 'Attribute name not specified of: ' + JSON.stringify(attrs[i]);
+            for (var i = 0; i < def.attributes.length; i++) {
+                var attr = def.attributes[i]
+                if(!attr.name){
+                    throw 'Attribute name not specified of: ' + JSON.stringify(attr);
                 }
 
-                var angularBinding = '=';
-                var type = attrs[i].type || 'data';
+                var angularBinding = '='; // default attribute binding
+                var type = attr.type || 'data';
                 switch (type.toUpperCase()) {
                     case 'EXPR':
                         angularBinding= '&';
@@ -144,7 +143,7 @@
                         angularBinding = '@';
                         break;
                 }
-                var camelCaseAttrName = this.utility.camelCaseTagName(attrs[i].name);
+                var camelCaseAttrName = this.utility.camelCaseTagName(attr.name);
                 scope[camelCaseAttrName] = angularBinding;
             }
             return scope;
@@ -162,25 +161,6 @@
             } else {
                 return component.name;
             }
-        }
-
-        private getAttributes(attributes: any): IAttributeBinding[] {
-            var result: IAttributeBinding[] = [];
-
-            if (angular.isString(attributes)){
-                var parts = attributes.split(' ');
-                for (var i = 0; i < parts.length; i++) {
-                    result.push({
-                        type: 'data',
-                        name: parts[i]
-                    })
-                }
-                return result;
-            } else if(angular.isArray(attributes)) {
-                return attributes;
-            }
-            throw 'Unknown format of "attributes" binding: ' + attributes;
-
         }
 
     }

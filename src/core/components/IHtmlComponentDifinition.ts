@@ -22,7 +22,7 @@
          * or as array, by specifying name and type of each one:
          * - attributes: [ { name: 'one-attribute', type: 'data' }, { name: 'on-updated', type: 'expr'} ]
          */
-        attributes?: any;
+        attributes?: IAttributeBinding[];
 
         /**
          * Setup template url address of the component
