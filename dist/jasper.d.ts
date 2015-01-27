@@ -332,6 +332,11 @@ declare module jasper.core {
         protected $digest(): void;
         protected $apply(): void;
         protected $on(eventName: string, listener: (event: ng.IAngularEvent, ...args: any[]) => any): void;
+        protected $watch(watchExpression: (scope: ng.IScope) => any, listener?: (newValue: any, oldValue: any, scope: ng.IScope) => any, objectEquality?: boolean): void;
+        protected $watchCollection(watchExpression: (scope: ng.IScope) => any, listener: (newValue: any, oldValue: any, scope: ng.IScope) => any): void;
+        protected $watchGroup(watchExpressions: {
+            (scope: ng.IScope): any;
+        }[], listener: (newValue: any, oldValue: any, scope: ng.IScope) => any): void;
         private ensureScope();
     }
 }

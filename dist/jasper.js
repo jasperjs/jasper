@@ -26,7 +26,14 @@ var jasper;
             };
             UtilityService.prototype.getFactoryOf = function (component) {
                 if (angular.isString(component)) {
-                    return eval(component);
+                    var result;
+                    try {
+                        result = eval(component);
+                    }
+                    catch (e) {
+                        throw 'Factory defined as \"' + component + '\" not found';
+                    }
+                    return result;
                 }
                 else if (angular.isFunction(component)) {
                     return component;
@@ -489,6 +496,18 @@ var jasper;
             JasperComponent.prototype.$on = function (eventName, listener) {
                 this.ensureScope();
                 this.$$scope.$on(eventName, listener);
+            };
+            JasperComponent.prototype.$watch = function (watchExpression, listener, objectEquality) {
+                this.ensureScope();
+                this.$$scope.$watch(watchExpression, listener, objectEquality);
+            };
+            JasperComponent.prototype.$watchCollection = function (watchExpression, listener) {
+                this.ensureScope();
+                this.$$scope.$watchCollection(watchExpression, listener);
+            };
+            JasperComponent.prototype.$watchGroup = function (watchExpressions, listener) {
+                this.ensureScope();
+                this.$$scope.$watchGroup(watchExpressions, listener);
             };
             JasperComponent.prototype.ensureScope = function () {
                 if (!this.$$scope)
