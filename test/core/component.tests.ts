@@ -250,4 +250,33 @@
         expect(destroyInvoked).toBe(true);
     }));
 
+    it('Test that undefined attribute do not pass to the component', inject(($compile, $rootScope) => {
+        // test component
+        var invoked  = false;
+        var component = function() {
+            this.someAttr = '';
+            this.initializeComponent = function() {
+
+            };
+            this.someAttr_change = function(){
+                invoked = true;
+            }
+        };
+        var definition: jasper.core.IHtmlComponentDefinition = {
+            name: 'someTag',
+            ctor: component,
+            attributes: [{
+                name: 'some-attr'
+            }],
+            template: '<p>hello</p>'
+        };
+        registerDefinitionObject(definition);
+
+        $compile('<some-tag some-attr="undefinedProperty"></some-tag>')($rootScope.$new());
+
+        $rootScope.$digest();
+
+        expect(invoked).toBe(false);
+    }));
+
 });

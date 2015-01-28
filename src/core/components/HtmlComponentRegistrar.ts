@@ -83,6 +83,8 @@
             ctrl[attributeName] = scope[attributeName];
             if (watch) {
                 scope.$watch(attributeName, (val, oldVal) => {
+                    if(angular.isUndefined(val) && angular.isUndefined(oldVal))
+                        return; // do not pass undefined properties to the component
                     ctrl[attributeName] = val;
                     var methodName = attributeName + '_change';
                     if (ctrl[methodName] && angular.isFunction(ctrl[methodName])) {
