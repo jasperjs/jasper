@@ -4,7 +4,7 @@
   "description": "Client library for jasper application",
   "main": "gruntfile.js",
   "scripts": {
-    "test": "test"
+    "test": "grunt test"
   },
   "repository": {
     "type": "git",
