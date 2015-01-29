@@ -43,6 +43,11 @@
         karma: {
             unit: {
                 configFile: 'karma.conf.js'
+            },
+            ci: {
+                configFile: 'karma.conf.js',
+                singleRun: true,
+                browsers: ['PhantomJS']
             }
         }
     });
@@ -50,5 +55,5 @@
     grunt.registerTask('default', ['typescript', 'uglify']);
 
     grunt.registerTask('test', ['typescript:tests', 'karma']);
-
+    grunt.registerTask('test-ci', ['typescript:tests', 'karma:ci']);
 };
