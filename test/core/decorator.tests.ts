@@ -36,7 +36,7 @@
         };
         var definition: jasper.core.IHtmlDecoratorDefinition = {
             name: 'myAttribute',
-            ctor: component
+            ctrl: component
         }
         var ddo = registerDefinitionObject(definition);
 
@@ -59,7 +59,7 @@
         };
         var definition: jasper.core.IHtmlDecoratorDefinition = {
             name: 'myAttribute',
-            ctor: component
+            ctrl: component
         }
 
         registerDefinitionObject(definition);
@@ -86,7 +86,7 @@
         };
         var definition: jasper.core.IHtmlDecoratorDefinition = {
             name: 'myAttribute',
-            ctor: component
+            ctrl: component
         }
         registerDefinitionObject(definition);
 
@@ -113,7 +113,7 @@
         };
         var definition: jasper.core.IHtmlDecoratorDefinition = {
             name: 'myAttribute',
-            ctor: component
+            ctrl: component
         }
         registerDefinitionObject(definition);
         var scope = $rootScope.$new();

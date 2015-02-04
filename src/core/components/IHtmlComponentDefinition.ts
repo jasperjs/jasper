@@ -39,6 +39,8 @@
          * Jasper associate instance of the object with component template.
          * Instance of this object will be available as 'vm' object in the template.
          */
+        ctrl?: any;
+        // same as ctor
         ctor?: any;
 
         /**

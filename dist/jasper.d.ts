@@ -162,6 +162,7 @@ declare module jasper.core {
          * Jasper associate instance of the object with component template.
          * Instance of this object will be available as 'vm' object in the template.
          */
+        ctrl?: any;
         ctor?: any;
         /**
          * Setup that this component need a dependency of another component.
@@ -195,8 +196,24 @@ declare module jasper.core {
 }
 declare module jasper {
     interface IHtmlDecoratorComponent {
+        /**
+         * Jasper invoke this method, during angular's link phase - when decorator associates with
+         * own html DOM element
+         *
+         * @value - value, passed to the html attribute
+         * @element - html element
+         * @attrs - collection of all attributes of @element
+         * @components - array or single components, that will be required by 'require' property of component definition
+         */
         link?: (value: any, element: HTMLElement, attrs: any, components: any) => void;
+        /**
+         * Jasper invokes this method when associated value changes
+         */
         onValueChanged?: (newValue: any, oldValue: any) => void;
+        /**
+         * Jasper invokes this method when associated html element is removed from DOM
+         */
+        destroyComponent(): any;
     }
 }
 declare module jasper.core {
@@ -207,11 +224,12 @@ declare module jasper.core {
          */
         name: string;
         /**
-         * Setup the 'code-behind' object constructor of the decorator.
+         * Setup the controller of the decorator.
          * Contains decorator logic
          * Instance of this object will be available as 'vm' object in the template.
          */
-        ctor: any;
+        ctrl: any;
+        ctor?: any;
         /**
          * Setup that this decorator needs a dependency of another component or decorator within html element.
          * Referenced components|decorator will be available in the 'link' method of the decorator.

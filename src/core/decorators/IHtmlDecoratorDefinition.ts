@@ -6,11 +6,13 @@
          */
         name: string;
         /**
-         * Setup the 'code-behind' object constructor of the decorator.
+         * Setup the controller of the decorator.
          * Contains decorator logic
          * Instance of this object will be available as 'vm' object in the template.
          */
-        ctor: any;
+        ctrl: any;
+        // same as ctrl
+        ctor?: any;
         /**
          * Setup that this decorator needs a dependency of another component or decorator within html element.
          * Referenced components|decorator will be available in the 'link' method of the decorator.

@@ -96,9 +96,10 @@
                 scope: this.getScopeDefinition(def)
             };
 
-            if (def.ctor) {
+            var ctrl = def.ctrl || def.ctor;
+            if (ctrl) {
                 directive.bindToController = true;
-                directive.controller = this.utility.getFactoryOf(def.ctor);
+                directive.controller = this.utility.getFactoryOf(ctrl);
                 directive.controllerAs = 'vm';
             }
 

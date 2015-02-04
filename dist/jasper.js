@@ -138,9 +138,10 @@ var jasper;
                     restrict: 'E',
                     scope: this.getScopeDefinition(def)
                 };
-                if (def.ctor) {
+                var ctrl = def.ctrl || def.ctor;
+                if (ctrl) {
                     directive.bindToController = true;
-                    directive.controller = this.utility.getFactoryOf(def.ctor);
+                    directive.controller = this.utility.getFactoryOf(ctrl);
                     directive.controllerAs = 'vm';
                 }
                 if (angular.isDefined(def.transclude))
@@ -253,11 +254,12 @@ var jasper;
                     restrict: 'A',
                     scope: false
                 };
-                if (!def.ctor) {
+                var ctrl = def.ctrl || def.ctor;
+                if (!ctrl) {
                     throw new Error(def.name + ' must specify constructor');
                 }
                 directive.scope[def.name] = '=';
-                directive.controller = this.utility.getFactoryOf(def.ctor);
+                directive.controller = this.utility.getFactoryOf(ctrl);
                 directive.require = this.getRequirementsForComponent(def);
                 directive.link = function (scope, element, attrs, controllers) {
                     var ctrls = _this.utility.getComponentControllers(controllers, directive);
