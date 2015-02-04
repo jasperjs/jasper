@@ -2,23 +2,23 @@
 
     export class HtmlComponentRegistrar implements IHtmlRegistrar<IHtmlComponentDefinition> {
 
-        private directive: (name: string, directiveFactory: Function) => ng.ICompileProvider;
-        private utility: IUtilityService;
+        private directive:(name:string, directiveFactory:Function) => ng.ICompileProvider;
+        private utility:IUtilityService;
 
-        constructor(compileProvider: ng.ICompileProvider) {
+        constructor(compileProvider:ng.ICompileProvider) {
             this.directive = compileProvider.directive;
             this.utility = new UtilityService();
         }
 
-        register(component: IHtmlComponentDefinition) {
+        register(component:IHtmlComponentDefinition) {
             var ddo = this.createDirectiveFor(component);
-            
+
             if (ddo.controller) {
                 ddo.compile = () => {
                     return {
-                        pre: (scope: ng.IScope, element: any, attrs: ng.IAttributes, controllers: any, tranclude: any) => {
+                        pre: (scope:ng.IScope, element:any, attrs:ng.IAttributes, controllers:any, tranclude:any) => {
                             var ctrls = this.utility.getComponentControllers(controllers, ddo);
-                            this.passPropertiesToCtrl(component, scope, ctrls.main, attrs);
+                            this.bindController(component, scope, ctrls.main, attrs);
 
                             ctrls.main.$$scope = scope;
 
@@ -31,7 +31,7 @@
                                 });
                             }
                         },
-                        post: (scope: ng.IScope, element: any, attrs: ng.IAttributes, controllers: any, tranclude: any) => {
+                        post: (scope:ng.IScope, element:any, attrs:ng.IAttributes, controllers:any, tranclude:any) => {
                             var ctrls = this.utility.getComponentControllers(controllers, ddo);
                             if (ctrls.main.link) {
                                 ctrls.main.link(element[0], ctrls.controllersToPass, tranclude);
@@ -40,12 +40,12 @@
                     }
                 };
             }
-            
+
             this.directive(component.name, () => ddo);
         }
 
-        private passPropertiesToCtrl(def: IHtmlComponentDefinition, scope: ng.IScope, ctrl: IHtmlComponent, attrs) {
-            if(!def.attributes)
+        private bindController(def:IHtmlComponentDefinition, scope:ng.IScope, ctrl:IHtmlComponent, attrs) {
+            if (!def.attributes)
                 return;
 
             for (var i = 0; i < def.attributes.length; i++) {
@@ -56,15 +56,15 @@
 
                 if (angular.isDefined(attrs[propertyName])) {
 
-                    switch (attrType.toUpperCase()){
+                    switch (attrType.toUpperCase()) {
                         case 'DATA':
-                            this.setupCtrlValue(propertyName, ctrl, scope, true);
+                            this.bindChangeMethod(propertyName, ctrl, scope);
                             break;
                         case 'EXPR':
-                            ctrl[propertyName] = scope[propertyName];
+                            //ctrl[propertyName] = scope[propertyName];
                             break;
                         case 'TEXT':
-                            this.setupCtrlValue(propertyName, ctrl, scope, false);
+                            this.bindChangeMethod(propertyName, ctrl, scope);
                             break;
                         default:
                             throw 'Unknown attribute type: ' + attrType
@@ -75,37 +75,29 @@
 
         }
 
-        private setupCtrlValue(attributeName: string
-            , ctrl: IHtmlComponent
-            , scope: ng.IScope
-            , watch: boolean) {
+        private bindChangeMethod(attributeName:string
+            , ctrl:IHtmlComponent
+            , scope:ng.IScope) {
 
-            ctrl[attributeName] = scope[attributeName];
-            if (watch) {
-                scope.$watch(attributeName, (val, oldVal) => {
-                    if(val===oldVal)
+            var methodName = attributeName + '_change';
+            if (ctrl[methodName] && angular.isFunction(ctrl[methodName])) {
+                scope.$watch(()=> ctrl[attributeName], (val, oldVal) => {
+                    if (val === oldVal)
                         return; // do not pass property id it does not change
-                    ctrl[attributeName] = val;
-                    var methodName = attributeName + '_change';
-                    if (ctrl[methodName] && angular.isFunction(ctrl[methodName])) {
-                        ctrl[methodName](val, oldVal);
-                    }
+                    ctrl[methodName](val, oldVal);
                 });
-                scope.$watch(() => {
-                    return ctrl[attributeName];
-                }, val => {
-                        scope[attributeName] = val;
-                    });
             }
+
         }
 
-        private createDirectiveFor(def: IHtmlComponentDefinition): ng.IDirective {
-            var directive: ng.IDirective = {
+        private createDirectiveFor(def:IHtmlComponentDefinition):ng.IDirective {
+            var directive:ng.IDirective = {
                 restrict: 'E',
                 scope: this.getScopeDefinition(def)
             };
 
             if (def.ctor) {
+                directive.bindToController = true;
                 directive.controller = this.utility.getFactoryOf(def.ctor);
                 directive.controllerAs = 'vm';
             }
@@ -124,14 +116,14 @@
             return directive;
         }
 
-        private getScopeDefinition(def: IHtmlComponentDefinition) {
+        private getScopeDefinition(def:IHtmlComponentDefinition) {
             var scope = {};
-            if(!def.attributes)
+            if (!def.attributes)
                 return scope;
 
             for (var i = 0; i < def.attributes.length; i++) {
                 var attr = def.attributes[i]
-                if(!attr.name){
+                if (!attr.name) {
                     throw 'Attribute name not specified of: ' + JSON.stringify(attr);
                 }
 
@@ -139,7 +131,7 @@
                 var type = attr.type || 'data';
                 switch (type.toUpperCase()) {
                     case 'EXPR':
-                        angularBinding= '&';
+                        angularBinding = '&';
                         break;
                     case 'TEXT':
                         angularBinding = '@';
@@ -151,7 +143,7 @@
             return scope;
         }
 
-        private getRequirementsForComponent(component: IHtmlComponentDefinition) {
+        private getRequirementsForComponent(component:IHtmlComponentDefinition) {
             if (angular.isDefined(component.require)) {
                 var req = [component.name];
                 if (angular.isArray(component.require))

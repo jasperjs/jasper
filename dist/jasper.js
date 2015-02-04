@@ -79,7 +79,7 @@ var jasper;
                         return {
                             pre: function (scope, element, attrs, controllers, tranclude) {
                                 var ctrls = _this.utility.getComponentControllers(controllers, ddo);
-                                _this.passPropertiesToCtrl(component, scope, ctrls.main, attrs);
+                                _this.bindController(component, scope, ctrls.main, attrs);
                                 ctrls.main.$$scope = scope;
                                 if (ctrls.main.initializeComponent && angular.isFunction(ctrls.main.initializeComponent))
                                     ctrls.main.initializeComponent();
@@ -100,7 +100,7 @@ var jasper;
                 }
                 this.directive(component.name, function () { return ddo; });
             };
-            HtmlComponentRegistrar.prototype.passPropertiesToCtrl = function (def, scope, ctrl, attrs) {
+            HtmlComponentRegistrar.prototype.bindController = function (def, scope, ctrl, attrs) {
                 if (!def.attributes)
                     return;
                 for (var i = 0; i < def.attributes.length; i++) {
@@ -110,13 +110,12 @@ var jasper;
                     if (angular.isDefined(attrs[propertyName])) {
                         switch (attrType.toUpperCase()) {
                             case 'DATA':
-                                this.setupCtrlValue(propertyName, ctrl, scope, true);
+                                this.bindChangeMethod(propertyName, ctrl, scope);
                                 break;
                             case 'EXPR':
-                                ctrl[propertyName] = scope[propertyName];
                                 break;
                             case 'TEXT':
-                                this.setupCtrlValue(propertyName, ctrl, scope, false);
+                                this.bindChangeMethod(propertyName, ctrl, scope);
                                 break;
                             default:
                                 throw 'Unknown attribute type: ' + attrType;
@@ -124,22 +123,13 @@ var jasper;
                     }
                 }
             };
-            HtmlComponentRegistrar.prototype.setupCtrlValue = function (attributeName, ctrl, scope, watch) {
-                ctrl[attributeName] = scope[attributeName];
-                if (watch) {
-                    scope.$watch(attributeName, function (val, oldVal) {
+            HtmlComponentRegistrar.prototype.bindChangeMethod = function (attributeName, ctrl, scope) {
+                var methodName = attributeName + '_change';
+                if (ctrl[methodName] && angular.isFunction(ctrl[methodName])) {
+                    scope.$watch(function () { return ctrl[attributeName]; }, function (val, oldVal) {
                         if (val === oldVal)
                             return; // do not pass property id it does not change
-                        ctrl[attributeName] = val;
-                        var methodName = attributeName + '_change';
-                        if (ctrl[methodName] && angular.isFunction(ctrl[methodName])) {
-                            ctrl[methodName](val, oldVal);
-                        }
-                    });
-                    scope.$watch(function () {
-                        return ctrl[attributeName];
-                    }, function (val) {
-                        scope[attributeName] = val;
+                        ctrl[methodName](val, oldVal);
                     });
                 }
             };
@@ -149,6 +139,7 @@ var jasper;
                     scope: this.getScopeDefinition(def)
                 };
                 if (def.ctor) {
+                    directive.bindToController = true;
                     directive.controller = this.utility.getFactoryOf(def.ctor);
                     directive.controllerAs = 'vm';
                 }

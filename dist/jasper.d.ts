@@ -50,8 +50,8 @@ declare module jasper.core {
         private utility;
         constructor(compileProvider: ng.ICompileProvider);
         register(component: IHtmlComponentDefinition): void;
-        private passPropertiesToCtrl(def, scope, ctrl, attrs);
-        private setupCtrlValue(attributeName, ctrl, scope, watch);
+        private bindController(def, scope, ctrl, attrs);
+        private bindChangeMethod(attributeName, ctrl, scope);
         private createDirectiveFor(def);
         private getScopeDefinition(def);
         private getRequirementsForComponent(component);

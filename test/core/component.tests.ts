@@ -136,7 +136,6 @@
         var attrValue;
         // test component
         var component = function() {
-            this.someAttr = '';
             this.initializeComponent = function() {
                 attrValue = this.someAttr;
             };
@@ -159,7 +158,6 @@
         var componentScope: ng.IScope;
         // test component
         var component = function() {
-            this.someAttr = '';
             this.initializeComponent = function() {
                 componentScope = this['$$scope'];
             };
@@ -181,7 +179,6 @@
         var attrValue;
         // test component
         var component = function() {
-            this.someAttr = '';
             this.initializeComponent = function() {
                 attrValue = this.someAttr;
             };
@@ -206,10 +203,7 @@
         var attrValue;
         // test component
         var component = function() {
-            this.someExpr = '';
-            this.initializeComponent = function() {
-                attrValue = this.someExpr;
-            };
+            attrValue = this.someExpr;
         };
         var definition: jasper.core.IHtmlComponentDefinition = {
             name: 'someTag',
@@ -221,17 +215,18 @@
             template: '<p>hello</p>'
         };
         registerDefinitionObject(definition);
+        var scope = $rootScope.$new();
+        scope['someMethod'] = function(){ return'called'; };
+        $compile('<some-tag some-expr="someMethod()"></some-tag>')(scope);
 
-        $compile('<some-tag some-expr="someMethod()"></some-tag>')($rootScope.$new());
-
-        expect(attrValue).toBeDefined();
+        expect(attrValue).toBeTruthy();
+        expect(attrValue()).toEqual('called');
     }));
 
     it('Test component destroy method invocation', inject(($compile, $rootScope) => {
         var destroyInvoked;
         // test component
         var component = function() {
-            this.someExpr = '';
             this.destroyComponent = function() {
                 destroyInvoked = true;
             };
@@ -254,10 +249,6 @@
         // test component
         var invoked  = false;
         var component = function() {
-            this.someAttr = '';
-            this.initializeComponent = function() {
-
-            };
             this.someAttr_change = function(){
                 invoked = true;
             }
@@ -277,6 +268,42 @@
         $rootScope.$digest();
 
         expect(invoked).toBe(false);
+    }));
+
+    it('Test that on change method invoked when property changed', inject(($compile, $rootScope) => {
+        // test component
+        var invoked  = false, newValue, oldValue;
+        var component = function() {
+            this.someAttr_change = function(newVal, oldVal){
+                invoked = true;
+                newValue = newVal;
+                oldValue = oldVal;
+            }
+        };
+        var definition: jasper.core.IHtmlComponentDefinition = {
+            name: 'someTag',
+            ctor: component,
+            attributes: [{
+                name: 'some-attr'
+            }],
+            template: '<p>hello</p>'
+        };
+        registerDefinitionObject(definition);
+
+        var scope = $rootScope.$new();
+        scope['prop']='test';
+        $compile('<some-tag some-attr="prop"></some-tag>')(scope);
+
+        $rootScope.$digest();
+
+        expect(invoked).toBe(false);
+
+        scope['prop'] = 'test 2';
+        $rootScope.$digest();
+
+        expect(invoked).toBe(true);
+        expect(newValue).toEqual('test 2');
+        expect(oldValue).toEqual('test');
     }));
 
 });
