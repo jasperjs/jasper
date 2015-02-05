@@ -52,12 +52,9 @@
 
         getFactoryOf(component:any):Function {
             if (angular.isString(component)) {
-                var result;
-                try {
-                    result = eval(component);
-                }
-                catch (e) {
-                    throw 'Factory defined as \"' + component + '\" not found';
+                var result = this.getter(window, component);
+                if(!result) {
+                    throw 'Constructor defined as \"' + component + '\" not found';
                 }
                 return result;
             } else if (angular.isFunction(component)) {
@@ -84,5 +81,22 @@
             }
             return tagName.replace(/\-(\w)/g, (match, letter) => letter.toUpperCase());
         }
+
+        private getter(obj: any, path: string): any {
+            var keys = path.split('.');
+            var key, len = keys.length;
+
+            for (var i = 0; i < len; i++) {
+                key = keys[i];
+                obj = obj[key];
+                if (!obj) {
+                    return undefined;
+                }
+            }
+
+            return obj;
+        }
+
+
     }
 } 

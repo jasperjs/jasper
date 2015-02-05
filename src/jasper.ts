@@ -3,15 +3,48 @@
 module jasper {
 
     export interface IJasperStatic {
+        /**
+         * Register a component
+         * @param def       component definition
+         */
         component(def: core.IHtmlComponentDefinition);
+        /**
+         * Register a decorator component
+         * @param def       decorator definition
+         */
         decorator(def: core.IDecoratorComponentProvider);
+        /**
+         * Register a filter
+         * @param def       filter definition
+         */
         filter(def: core.IFilterDefinition);
+        /**
+         * Register a service
+         * @param def       service definition
+         */
         service(def: core.IServiceDefinition);
+        /**
+         * Jasper areas service
+         */
         areas: areas.JasperAreasService;
-        // dynamic template registration
-        template(name: string, content: string);
-        // legacy angularjs method
+        /**
+         * Register a template in template cache
+         * @param key       key to access to template
+         * @param content   html content of the template
+         */
+        template(key: string, content: string);
+        /**
+         * Register an AngularJS directive. Use in a case of emergency
+         * @param name      directive name
+         * @param ddo       directive definition object
+         */
         directive(name: string, ddo: any);
+        /**
+         * Register new value
+         * @param name      name of the value
+         * @param value     value (string|object|array|number)
+         */
+        value(name: string, value: any);
     }
 
     angular.module('jasper',
