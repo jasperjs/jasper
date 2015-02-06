@@ -26,12 +26,9 @@ var jasper;
             };
             UtilityService.prototype.getFactoryOf = function (component) {
                 if (angular.isString(component)) {
-                    var result;
-                    try {
-                        result = eval(component);
-                    }
-                    catch (e) {
-                        throw 'Factory defined as \"' + component + '\" not found';
+                    var result = this.getter(window, component);
+                    if (!result) {
+                        throw 'Constructor defined as \"' + component + '\" not found';
                     }
                     return result;
                 }
@@ -56,6 +53,18 @@ var jasper;
                     return this.camelCase(tagName);
                 }
                 return tagName.replace(/\-(\w)/g, function (match, letter) { return letter.toUpperCase(); });
+            };
+            UtilityService.prototype.getter = function (obj, path) {
+                var keys = path.split('.');
+                var key, len = keys.length;
+                for (var i = 0; i < len; i++) {
+                    key = keys[i];
+                    obj = obj[key];
+                    if (!obj) {
+                        return undefined;
+                    }
+                }
+                return obj;
             };
             return UtilityService;
         })();
@@ -575,7 +584,9 @@ var jasper;
             }
             return AreaDefers;
         })();
-        // Collection of waiting areas
+        /**
+         * Collection of loading areas
+         */
         var LoadingAreasIdleCollection = (function () {
             function LoadingAreasIdleCollection(q) {
                 this.q = q;
@@ -585,14 +596,21 @@ var jasper;
             LoadingAreasIdleCollection.prototype.isLoading = function (areaname) {
                 return this.getLoadingAreaByName(areaname) != null;
             };
-            // Mark that area is loading
+            /**
+             * Mark that area is loading
+             * @param areaname      name of the area
+             */
             LoadingAreasIdleCollection.prototype.startLoading = function (areaname) {
                 if (this.isLoading(areaname))
                     throw areaname + ' allready loading';
                 var loading = new AreaDefers(areaname);
                 this.loadingAreas.push(loading);
             };
-            // Mark that area is loading
+            /**
+             * Adds initializer to area. Initializer invokes when area is fully loaded
+             * @param areaname          name of the area
+             * @returns {IPromise<T>}   promise resolves when area is loaded
+             */
             LoadingAreasIdleCollection.prototype.addInitializer = function (areaname) {
                 if (!this.isLoading(areaname))
                     throw areaname + ' does not loading';
@@ -662,7 +680,7 @@ var jasper;
                 this.loadedAreas = [];
                 this.resourceManager = new areas.JasperResourcesManager();
                 this.q = $q;
-                this.loadiingModules = new LoadingAreasIdleCollection(this.q);
+                this.loadiingAreas = new LoadingAreasIdleCollection(this.q);
             }
             JasperAreasService.prototype.configure = function (config) {
                 this.config = config;
@@ -676,13 +694,18 @@ var jasper;
                 }
             };
             JasperAreasService.prototype.initArea = function (areaName) {
-                return this.loadiingModules.addInitializer(areaName);
+                var area = this.ensureArea(areaName);
+                if (!area.scripts || !area.scripts.length) {
+                    // no scripts specified for area (may be bootstraped - allready loaded with _base.min.js)
+                    return this.q.when(true);
+                }
+                return this.loadiingAreas.addInitializer(areaName);
             };
-            JasperAreasService.prototype.loadAreas = function (areaName, hops /* avoid loop */) {
+            JasperAreasService.prototype.loadAreas = function (areaName, hops) {
                 var _this = this;
                 if (hops === void 0) { hops = 0; }
                 if (!this.config)
-                    throw "Resources not configure";
+                    throw "Areas not configured";
                 var section = this.config[areaName];
                 if (!section)
                     throw "Config with name '" + areaName + "' not found";
@@ -701,18 +724,34 @@ var jasper;
                     if (_this.isAreaLoaded(areaName)) {
                         defer.resolve();
                     }
-                    else if (_this.loadiingModules.isLoading(areaName)) {
-                        _this.loadiingModules.onAreaLoaded(areaName).then(function () { return defer.resolve(); });
+                    else if (_this.loadiingAreas.isLoading(areaName)) {
+                        // If area is loading now, register a callback when area is loaded
+                        _this.loadiingAreas.onAreaLoaded(areaName).then(function () { return defer.resolve(); });
                     }
                     else {
-                        _this.loadiingModules.startLoading(areaName);
+                        // mark area as loading now
+                        _this.loadiingAreas.startLoading(areaName);
                         _this.resourceManager.makeAccessible(_this.prepareUrls(section.scripts), _this.prepareUrls(section.styles), function () {
-                            _this.loadiingModules.notifyOnLoaded(areaName);
+                            // notify all subscribers that area is loaded
+                            _this.loadiingAreas.notifyOnLoaded(areaName);
+                            _this.loadedAreas.push(areaName);
                             defer.resolve();
                         });
                     }
                 });
                 return defer.promise;
+            };
+            /**
+             * Ensures that areas exists in the configuration and return the found area config
+             * @param areaName      name of area
+             */
+            JasperAreasService.prototype.ensureArea = function (areaName) {
+                if (!this.config)
+                    throw "Areas not configured";
+                var area = this.config[areaName];
+                if (!area)
+                    throw "Area with name '" + areaName + "' not found";
+                return area;
             };
             JasperAreasService.prototype.isAreaLoaded = function (areaname) {
                 return this.loadedAreas.indexOf(areaname) >= 0;

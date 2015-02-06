@@ -42,6 +42,7 @@ declare module jasper.core {
         snakeCase(source: string): string;
         camelCase(source: string): string;
         camelCaseTagName(tagName: string): string;
+        private getter(obj, path);
     }
 }
 declare module jasper.core {
@@ -367,8 +368,11 @@ declare module jasper.areas {
 declare module jasper.areas {
     class JasperAreasService {
         static $inject: string[];
+        /**
+         * Client-side areas configuration
+         */
         private config;
-        private loadiingModules;
+        private loadiingAreas;
         static maxDependencyHops: number;
         resourceManager: IResourceManager;
         loadedAreas: string[];
@@ -378,6 +382,11 @@ declare module jasper.areas {
         onAreaLoaded(areaName: string): ng.IPromise<any>;
         initArea(areaName: string): ng.IPromise<any>;
         loadAreas(areaName: string, hops?: number): ng.IPromise<any>;
+        /**
+         * Ensures that areas exists in the configuration and return the found area config
+         * @param areaName      name of area
+         */
+        private ensureArea(areaName);
         private isAreaLoaded(areaname);
         private prepareUrls(urls);
     }
@@ -422,12 +431,47 @@ declare module jasper.routing {
 declare var jsp: jasper.IJasperStatic;
 declare module jasper {
     interface IJasperStatic {
+        /**
+         * Register a component
+         * @param def       component definition
+         */
         component(def: core.IHtmlComponentDefinition): any;
+        /**
+         * Register a decorator component
+         * @param def       decorator definition
+         */
         decorator(def: core.IDecoratorComponentProvider): any;
+        /**
+         * Register a filter
+         * @param def       filter definition
+         */
         filter(def: core.IFilterDefinition): any;
+        /**
+         * Register a service
+         * @param def       service definition
+         */
         service(def: core.IServiceDefinition): any;
+        /**
+         * Jasper areas service
+         */
         areas: areas.JasperAreasService;
-        template(name: string, content: string): any;
+        /**
+         * Register a template in template cache
+         * @param key       key to access to template
+         * @param content   html content of the template
+         */
+        template(key: string, content: string): any;
+        /**
+         * Register an AngularJS directive. Use in a case of emergency
+         * @param name      directive name
+         * @param ddo       directive definition object
+         */
         directive(name: string, ddo: any): any;
+        /**
+         * Register new value
+         * @param name      name of the value
+         * @param value     value (string|object|array|number)
+         */
+        value(name: string, value: any): any;
     }
 }
