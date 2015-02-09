@@ -153,6 +153,10 @@
         }
 
         initArea(areaName:string) : ng.IPromise<any> {
+            if(!this.config){
+                // resolve unregistred areas (bootstrapped)
+                return this.q.when(true);
+            }
             var area = this.ensureArea(areaName);
             if (!area.scripts || !area.scripts.length) {
                 // no scripts specified for area (may be bootstraped - allready loaded with _base.min.js)

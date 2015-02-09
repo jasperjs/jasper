@@ -47,4 +47,5 @@
 /// <reference path="routes/JasperRouteTableProvider.ts" />
 /// <reference path="routes/module.ts" />
 
+/// <reference path="JasperStatic.ts" />
 /// <reference path="jasper.ts" />

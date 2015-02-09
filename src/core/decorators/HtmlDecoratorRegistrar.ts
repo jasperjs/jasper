@@ -34,17 +34,17 @@
                 ctrls.main.$$scope = scope;
 
                 var attrExpr = attrs[def.name];
-                var eval = angular.isDefined(def.eval) ? def.eval : true;
+                var evl = angular.isDefined(def.eval) ? def.eval : true;
 
                 var value = undefined;
                 if (angular.isDefined(attrExpr)) {
-                    value = eval ? scope.$eval(attrExpr) : attrExpr;
+                    value = evl ? scope.$eval(attrExpr) : attrExpr;
                 }
 
                 if (ctrls.main.link)
                     ctrls.main.link(value, element[0], attrs, ctrls.controllersToPass);
 
-                if (ctrls.main.onValueChanged && attrs[def.name] && eval) {
+                if (ctrls.main.onValueChanged && attrs[def.name] && evl) {
                     scope.$watch(attrExpr, (newValue: any, oldValue: any) => {
                         ctrls.main.onValueChanged(newValue, oldValue);
                     });

@@ -274,14 +274,14 @@ var jasper;
                     var ctrls = _this.utility.getComponentControllers(controllers, directive);
                     ctrls.main.$$scope = scope;
                     var attrExpr = attrs[def.name];
-                    var eval = angular.isDefined(def.eval) ? def.eval : true;
+                    var evl = angular.isDefined(def.eval) ? def.eval : true;
                     var value = undefined;
                     if (angular.isDefined(attrExpr)) {
-                        value = eval ? scope.$eval(attrExpr) : attrExpr;
+                        value = evl ? scope.$eval(attrExpr) : attrExpr;
                     }
                     if (ctrls.main.link)
                         ctrls.main.link(value, element[0], attrs, ctrls.controllersToPass);
-                    if (ctrls.main.onValueChanged && attrs[def.name] && eval) {
+                    if (ctrls.main.onValueChanged && attrs[def.name] && evl) {
                         scope.$watch(attrExpr, function (newValue, oldValue) {
                             ctrls.main.onValueChanged(newValue, oldValue);
                         });
@@ -694,6 +694,10 @@ var jasper;
                 }
             };
             JasperAreasService.prototype.initArea = function (areaName) {
+                if (!this.config) {
+                    // resolve unregistred areas (bootstrapped)
+                    return this.q.when(true);
+                }
                 var area = this.ensureArea(areaName);
                 if (!area.scripts || !area.scripts.length) {
                     // no scripts specified for area (may be bootstraped - allready loaded with _base.min.js)
@@ -876,6 +880,64 @@ var jasper;
 angular.module('jasperRoutes', ['jasperAreas']).provider('jasperRoute', jasper.routing.JasperRouteTableProvider);
 var jasper;
 (function (jasper) {
+    var JasperStatic = (function () {
+        function JasperStatic() {
+            this.readyQueue = [];
+        }
+        JasperStatic.prototype.component = function (def) {
+            this.componentProvider.register(def);
+        };
+        JasperStatic.prototype.decorator = function (def) {
+            this.decoratorProvider.register(def);
+        };
+        JasperStatic.prototype.filter = function (def) {
+            this.filtersProvider.register(def);
+        };
+        JasperStatic.prototype.service = function (def) {
+            this.serviceProvider.register(def);
+        };
+        JasperStatic.prototype.template = function (key, content) {
+            this.templateCahce.put(key, content);
+        };
+        JasperStatic.prototype.value = function (name, value) {
+            this.valueProvider.register(name, value);
+        };
+        JasperStatic.prototype.init = function (componentProvider, decoratorProvider, serviceProvider, filterProvider, valueProvider, directiveFactory) {
+            this.componentProvider = componentProvider;
+            this.decoratorProvider = decoratorProvider;
+            this.serviceProvider = serviceProvider;
+            this.valueProvider = valueProvider;
+            this.filtersProvider = filterProvider;
+            this.directive = directiveFactory;
+        };
+        JasperStatic.prototype.setup = function (templateCache, areasService) {
+            this.areas = areasService;
+            this.templateCahce = templateCache;
+            this.ready();
+        };
+        JasperStatic.prototype.ready = function (cb) {
+            if (!cb) {
+                this.readyQueue.forEach(function (subscriber) {
+                    subscriber();
+                });
+                this.readyQueue = []; // flush subscriber queue
+                this.isReady = true;
+                return;
+            }
+            if (this.isReady) {
+                cb();
+            }
+            else {
+                this.readyQueue.push(cb);
+            }
+        };
+        return JasperStatic;
+    })();
+    jasper.JasperStatic = JasperStatic;
+    window['jsp'] = new JasperStatic();
+})(jasper || (jasper = {}));
+var jasper;
+(function (jasper) {
     angular.module('jasper', [
         'ng',
         'ngRoute',
@@ -883,19 +945,9 @@ var jasper;
         'jasperAreas',
         'jasperRoutes'
     ]).config(['jasperComponentProvider', 'jasperDecoratorProvider', 'jasperServiceProvider', 'jasperFilterProvider', 'jasperValueProvider', '$compileProvider', function (jasperComponents, jasperDecorators, jasperServices, jasperFilters, jasperValues, $compileProvider) {
-        window['jsp'] = {
-            component: function (def) { return jasperComponents.register(def); },
-            decorator: function (def) { return jasperDecorators.register(def); },
-            service: function (def) { return jasperServices.register(def); },
-            filter: function (def) { return jasperFilters.register(def); },
-            value: function (name, value) { return jasperValues.register(name, value); },
-            directive: $compileProvider.directive
-        };
+        window['jsp'].init(jasperComponents, jasperDecorators, jasperServices, jasperFilters, jasperValues, $compileProvider.directive);
     }]).run(['jasperAreasService', '$templateCache', function (jasperAreasService, $templateCache) {
-        window['jsp'].areas = jasperAreasService;
-        window['jsp'].template = function (name, content) {
-            $templateCache.put(name, content);
-        };
+        window['jsp'].setup($templateCache, jasperAreasService);
     }]);
 })(jasper || (jasper = {}));
 // CORE
@@ -929,5 +981,6 @@ var jasper;
 // ROUTES
 /// <reference path="routes/JasperRouteTableProvider.ts" />
 /// <reference path="routes/module.ts" />
+/// <reference path="JasperStatic.ts" />
 /// <reference path="jasper.ts" />
 //# sourceMappingURL=jasper.js.map

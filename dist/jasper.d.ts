@@ -428,7 +428,6 @@ declare module jasper.routing {
         setup(config: IRoutesConfiguration): any;
     }
 }
-declare var jsp: jasper.IJasperStatic;
 declare module jasper {
     interface IJasperStatic {
         /**
@@ -440,7 +439,7 @@ declare module jasper {
          * Register a decorator component
          * @param def       decorator definition
          */
-        decorator(def: core.IDecoratorComponentProvider): any;
+        decorator(def: core.IHtmlDecoratorDefinition): any;
         /**
          * Register a filter
          * @param def       filter definition
@@ -473,5 +472,35 @@ declare module jasper {
          * @param value     value (string|object|array|number)
          */
         value(name: string, value: any): any;
+        /**
+         * Notify when jasper is ready to work
+         * @param cb
+         */
+        ready(cb?: () => void): any;
+        setup(templateCache: ng.ITemplateCacheService, areasService: areas.JasperAreasService): any;
     }
+    class JasperStatic implements IJasperStatic {
+        private isReady;
+        private readyQueue;
+        private componentProvider;
+        private decoratorProvider;
+        private serviceProvider;
+        private filtersProvider;
+        private valueProvider;
+        private templateCahce;
+        directive: (name: string, ddo: any) => void;
+        component(def: core.IHtmlComponentDefinition): void;
+        decorator(def: core.IHtmlDecoratorDefinition): void;
+        filter(def: core.IFilterDefinition): void;
+        service(def: core.IServiceDefinition): void;
+        areas: areas.JasperAreasService;
+        template(key: string, content: string): void;
+        value(name: string, value: any): void;
+        init(componentProvider: core.IComponentProvider, decoratorProvider: core.IDecoratorComponentProvider, serviceProvider: core.IServiceProvider, filterProvider: core.IFilterProvider, valueProvider: core.IValueProvider, directiveFactory: any): void;
+        setup(templateCache: ng.ITemplateCacheService, areasService: areas.JasperAreasService): void;
+        ready(cb?: () => void): void;
+    }
+}
+declare var jsp: jasper.IJasperStatic;
+declare module jasper {
 }
