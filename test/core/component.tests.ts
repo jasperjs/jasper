@@ -142,7 +142,7 @@
         };
         var definition: jasper.core.IHtmlComponentDefinition = {
             name: 'someTagCtor',
-            ctor: component,
+            ctrl: component,
             attributes:[{name: 'some-attr'}],
             template: '<p>hello {{vm.someAttr}}</p>'
         };
@@ -164,7 +164,7 @@
         };
         var definition: jasper.core.IHtmlComponentDefinition = {
             name: 'someTagCtor',
-            ctor: component,
+            ctrl: component,
             attributes:[{name: 'some-attr'}],
             template: '<p>hello {{vm.someAttr}}</p>'
         };
@@ -185,7 +185,7 @@
         };
         var definition: jasper.core.IHtmlComponentDefinition = {
             name: 'someTag',
-            ctor: component,
+            ctrl: component,
             attributes: [{
                 type:'text',
                 name: 'some-attr'
@@ -207,7 +207,7 @@
         };
         var definition: jasper.core.IHtmlComponentDefinition = {
             name: 'someTag',
-            ctor: component,
+            ctrl: component,
             attributes: [{
                     name: 'some-expr',
                     type: 'expr'
@@ -233,7 +233,7 @@
         };
         var definition: jasper.core.IHtmlComponentDefinition = {
             name: 'someTag',
-            ctor: component,
+            ctrl: component,
             template: '<p>hello</p>'
         };
         registerDefinitionObject(definition);
@@ -255,7 +255,7 @@
         };
         var definition: jasper.core.IHtmlComponentDefinition = {
             name: 'someTag',
-            ctor: component,
+            ctrl: component,
             attributes: [{
                 name: 'some-attr'
             }],
@@ -282,7 +282,7 @@
         };
         var definition: jasper.core.IHtmlComponentDefinition = {
             name: 'someTag',
-            ctor: component,
+            ctrl: component,
             attributes: [{
                 name: 'some-attr'
             }],

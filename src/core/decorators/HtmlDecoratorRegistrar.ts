@@ -54,6 +54,7 @@
                     // when element is destroyed - invoke component method
                     element.on('$destroy', () => {
                         ctrls.main.destroyComponent();
+                        ctrls.main.$$scope = null;
                     });
                 }
             };

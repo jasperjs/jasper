@@ -102,7 +102,6 @@
 
 
     it('Test decorator component $$scope assign', inject(($compile, $rootScope) => {
-
         var componentScope: ng.IScope;
         // test component
         var component = function() {
@@ -120,5 +119,6 @@
         $compile('<div my-attribute="\'test\'"></div>')(scope);
         expect(componentScope).toBeDefined();
     }));
+
 
 });

@@ -95,6 +95,7 @@ var jasper;
                                 if (ctrls.main.destroyComponent && angular.isFunction(ctrls.main.destroyComponent)) {
                                     scope.$on('$destroy', function () {
                                         ctrls.main.destroyComponent();
+                                        ctrls.main.$$scope = null;
                                     });
                                 }
                             },
@@ -290,6 +291,7 @@ var jasper;
                         // when element is destroyed - invoke component method
                         element.on('$destroy', function () {
                             ctrls.main.destroyComponent();
+                            ctrls.main.$$scope = null;
                         });
                     }
                 };

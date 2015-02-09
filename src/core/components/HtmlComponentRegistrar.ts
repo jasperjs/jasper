@@ -28,6 +28,7 @@
                             if (ctrls.main.destroyComponent && angular.isFunction(ctrls.main.destroyComponent)) {
                                 scope.$on('$destroy', () => {
                                     ctrls.main.destroyComponent();
+                                    ctrls.main.$$scope = null;
                                 });
                             }
                         },
