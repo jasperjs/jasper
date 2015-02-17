@@ -349,13 +349,16 @@ declare module jasper.core {
     class JasperComponent {
         private $$scope;
         protected $digest(): void;
-        protected $apply(): void;
-        protected $on(eventName: string, listener: (event: ng.IAngularEvent, ...args: any[]) => any): void;
-        protected $watch(watchExpression: (scope: ng.IScope) => any, listener?: (newValue: any, oldValue: any, scope: ng.IScope) => any, objectEquality?: boolean): void;
-        protected $watchCollection(watchExpression: (scope: ng.IScope) => any, listener: (newValue: any, oldValue: any, scope: ng.IScope) => any): void;
-        protected $watchGroup(watchExpressions: {
-            (scope: ng.IScope): any;
-        }[], listener: (newValue: any, oldValue: any, scope: ng.IScope) => any): void;
+        protected $apply(f?: any): void;
+        protected $on(eventName: string, listener: (event: ng.IAngularEvent, ...args: any[]) => any): Function;
+        protected $watch(watchExpression: string, listener?: string, objectEquality?: boolean): Function;
+        protected $watch(watchExpression: string, listener?: (newValue: any, oldValue: any, scope: ng.IScope) => any, objectEquality?: boolean): Function;
+        protected $watch(watchExpression: (scope: ng.IScope) => any, listener?: string, objectEquality?: boolean): Function;
+        protected $watchCollection(watchExpression: string, listener: (newValue: any, oldValue: any, scope: ng.IScope) => any): Function;
+        protected $watchGroup(watchExpressions: any[], listener: (newValue: any, oldValue: any, scope: ng.IScope) => any): Function;
+        protected $eval(expression?: string, args?: Object): any;
+        protected $evalAsync(expression?: string): void;
+        protected $evalAsync(expression?: (scope: ng.IScope) => any): void;
         private ensureScope();
     }
 }

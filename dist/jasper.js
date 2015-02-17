@@ -495,25 +495,33 @@ var jasper;
                 this.ensureScope();
                 this.$$scope.$digest();
             };
-            JasperComponent.prototype.$apply = function () {
+            JasperComponent.prototype.$apply = function (f) {
                 this.ensureScope();
-                this.$$scope.$apply();
+                this.$$scope.$apply(f);
             };
             JasperComponent.prototype.$on = function (eventName, listener) {
                 this.ensureScope();
-                this.$$scope.$on(eventName, listener);
+                return this.$$scope.$on(eventName, listener);
             };
             JasperComponent.prototype.$watch = function (watchExpression, listener, objectEquality) {
                 this.ensureScope();
-                this.$$scope.$watch(watchExpression, listener, objectEquality);
+                return this.$$scope.$watch(watchExpression, listener, objectEquality);
             };
             JasperComponent.prototype.$watchCollection = function (watchExpression, listener) {
                 this.ensureScope();
-                this.$$scope.$watchCollection(watchExpression, listener);
+                return this.$$scope.$watchCollection(watchExpression, listener);
             };
             JasperComponent.prototype.$watchGroup = function (watchExpressions, listener) {
                 this.ensureScope();
-                this.$$scope.$watchGroup(watchExpressions, listener);
+                return this.$$scope.$watchGroup(watchExpressions, listener);
+            };
+            JasperComponent.prototype.$eval = function (expression, args) {
+                this.ensureScope();
+                return this.$$scope.$eval(expression, args);
+            };
+            JasperComponent.prototype.$evalAsync = function (expression) {
+                this.ensureScope();
+                return this.$$scope.$evalAsync(expression);
             };
             JasperComponent.prototype.ensureScope = function () {
                 if (!this.$$scope)
