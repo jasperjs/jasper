@@ -354,7 +354,9 @@ declare module jasper.core {
         protected $watch(watchExpression: string, listener?: string, objectEquality?: boolean): Function;
         protected $watch(watchExpression: string, listener?: (newValue: any, oldValue: any, scope: ng.IScope) => any, objectEquality?: boolean): Function;
         protected $watch(watchExpression: (scope: ng.IScope) => any, listener?: string, objectEquality?: boolean): Function;
+        protected $watch(watchExpression: (scope: ng.IScope) => any, listener?: (newValue: any, oldValue: any, scope: ng.IScope) => any, objectEquality?: boolean): Function;
         protected $watchCollection(watchExpression: string, listener: (newValue: any, oldValue: any, scope: ng.IScope) => any): Function;
+        protected $watchCollection(watchExpression: (scope: ng.IScope) => any, listener: (newValue: any, oldValue: any, scope: ng.IScope) => any): Function;
         protected $watchGroup(watchExpressions: any[], listener: (newValue: any, oldValue: any, scope: ng.IScope) => any): Function;
         protected $eval(expression?: string, args?: Object): any;
         protected $evalAsync(expression?: string): void;

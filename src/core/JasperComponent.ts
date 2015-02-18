@@ -21,12 +21,14 @@ module jasper.core {
         protected $watch(watchExpression: string, listener?: string, objectEquality?: boolean): Function;
         protected $watch(watchExpression: string, listener?: (newValue: any, oldValue: any, scope: ng.IScope) => any, objectEquality?: boolean): Function;
         protected $watch(watchExpression: (scope: ng.IScope) => any, listener?: string, objectEquality?: boolean): Function;
+        protected $watch(watchExpression: (scope: ng.IScope) => any, listener?: (newValue: any, oldValue: any, scope: ng.IScope) => any, objectEquality?: boolean): Function;
         protected $watch(watchExpression: any, listener?: any, objectEquality?: boolean): Function {
             this.ensureScope();
             return this.$$scope.$watch(watchExpression, listener, objectEquality);
         }
 
         protected $watchCollection(watchExpression: string, listener: (newValue: any, oldValue: any, scope: ng.IScope) => any): Function;
+        protected $watchCollection(watchExpression: (scope: ng.IScope) => any, listener: (newValue: any, oldValue: any, scope: ng.IScope) => any): Function;
         protected $watchCollection(watchExpression: any, listener: (newValue: any, oldValue: any, scope: ng.IScope) => any): Function {
             this.ensureScope();
             return this.$$scope.$watchCollection(watchExpression, listener);

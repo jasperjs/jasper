@@ -30,4 +30,12 @@ describe('JasperComponent tests', () => {
         component['$on']('eventName', ()=>{});
         expect(scope.$on).toHaveBeenCalled();
     }));
+
+    it('Test angularJs watch registration', inject(($rootScope: ng.IScope) => {
+        var scope = $rootScope.$new();
+        spyOn(scope,'$watch').and.callThrough();
+        component['$$scope'] = scope;
+        component['$watch']('test', ()=>{});
+        expect(scope.$watch).toHaveBeenCalled();
+    }));
 });

@@ -104,11 +104,9 @@
                 directive.controllerAs = 'vm';
             }
 
-            if (angular.isDefined(def.transclude))
-                directive.transclude = def.transclude === 'true' ? true : def.transclude;
-
-            if (angular.isDefined(def.templateUrl))
-                directive.templateUrl = def.templateUrl;
+            directive.transclude = def.transclude === 'true' ? true : def.transclude;
+            directive.templateUrl = def.templateUrl;
+            directive.replace = def.replace;
 
             if (angular.isDefined(def.template))
                 directive.template = def.template;
