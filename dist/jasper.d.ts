@@ -166,6 +166,10 @@ declare module jasper.core {
         ctrl?: any;
         ctor?: any;
         /**
+         * Replace component custom html tag with root of the component's template?
+         */
+        replace?: boolean;
+        /**
          * Setup that this component need a dependency of another component.
          * Referenced components will be available in the 'link' method of the component.
          */
