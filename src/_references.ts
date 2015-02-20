@@ -27,6 +27,7 @@
 /// <reference path="core/services/ServiceRegistrar.ts" />
 
 /// <reference path="core/values/ValueProvider.ts" />
+/// <reference path="core/constants/ConstantProvider.ts" />
 
 /// <reference path="core/GlobalEvents.ts" />
 /// <reference path="core/JasperComponent.ts" />

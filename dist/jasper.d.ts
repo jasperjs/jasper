@@ -324,6 +324,18 @@ declare module jasper.core {
     }
 }
 declare module jasper.core {
+    interface IConstantProvider {
+        register(name: string, value: any): any;
+    }
+    class ConstantProvider implements IConstantProvider, ng.IServiceProvider {
+        private provide;
+        static $inject: string[];
+        constructor(provide: any);
+        register(name: string, value: any): void;
+        $get(): ConstantProvider;
+    }
+}
+declare module jasper.core {
     interface ISubscription {
         remove(): any;
     }
@@ -371,7 +383,7 @@ declare module jasper.core {
 declare module jasper.areas {
     class JasperAreaDirective {
         static $inject: string[];
-        constructor($compile: ng.ICompileService, jasperAreasService: JasperAreasService, $q: ng.IQService);
+        constructor($compile: ng.ICompileService, jasperAreasService: JasperAreasService);
     }
 }
 declare module jasper.areas {
@@ -390,7 +402,8 @@ declare module jasper.areas {
         configure(config: any): void;
         onAreaLoaded(areaName: string): ng.IPromise<any>;
         initArea(areaName: string): ng.IPromise<any>;
-        loadAreas(areaName: string, hops?: number): ng.IPromise<any>;
+        loadAreas(areas: string, hops?: number): ng.IPromise<any>;
+        loadAreas(areas: string[], hops?: number): ng.IPromise<any>;
         /**
          * Ensures that areas exists in the configuration and return the found area config
          * @param areaName      name of area

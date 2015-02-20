@@ -166,17 +166,29 @@
             return this.loadiingAreas.addInitializer(areaName);
         }
 
-        loadAreas(areaName: string, hops: number = 0): ng.IPromise<any> {
+        loadAreas(areas: string, hops?: number): ng.IPromise<any>;
+        loadAreas(areas: string[], hops?: number): ng.IPromise<any>;
+        loadAreas(areas: any, hops: number = 0): ng.IPromise<any> {
             if (!this.config)
                 throw "Areas not configured";
-            var section = <IAreaSection>this.config[areaName];
+
+            if (angular.isArray(areas)) {
+                var allAreas: ng.IPromise<any>[] = [];
+                areas.forEach((areaName: string) => {
+                    allAreas.push(this.loadAreas(areaName));
+                });
+                return this.q.all(allAreas);
+            }
+
+            var section = <IAreaSection>this.config[areas];
             if (!section)
-                throw "Config with name '" + areaName + "' not found";
+                throw "Config with name '" + areas + "' not found";
 
             //dependencies:
+
             hops++;
             if (hops > JasperAreasService.maxDependencyHops)
-                throw 'Possible cyclic dependencies found on module: ' + areaName;
+                throw 'Possible cyclic dependencies found on module: ' + areas;
 
             var allDependencies:ng.IPromise<any>[] = []; // list of all deps of this module
             for (var i = 0; i < section.dependencies.length; i++) {
@@ -187,22 +199,22 @@
             var defer = this.q.defer();
             this.q.all(allDependencies).then(() => {
                 //all dependencies loaded
-                if (this.isAreaLoaded(areaName)) {
+                if (this.isAreaLoaded(areas)) {
                     defer.resolve();
                 }
-                else if (this.loadiingAreas.isLoading(areaName)) {
+                else if (this.loadiingAreas.isLoading(areas)) {
                     // If area is loading now, register a callback when area is loaded
-                    this.loadiingAreas.onAreaLoaded(areaName).then(() => defer.resolve());
+                    this.loadiingAreas.onAreaLoaded(areas).then(() => defer.resolve());
                 } else {
                     // mark area as loading now
-                    this.loadiingAreas.startLoading(areaName);
+                    this.loadiingAreas.startLoading(areas);
                     this.resourceManager.makeAccessible(
                         this.prepareUrls(section.scripts),
                         this.prepareUrls(section.styles),
                         () => {
                             // notify all subscribers that area is loaded
-                            this.loadiingAreas.notifyOnLoaded(areaName);
-                            this.loadedAreas.push(areaName);
+                            this.loadiingAreas.notifyOnLoaded(areas);
+                            this.loadedAreas.push(areas);
                             defer.resolve();
                         });
                 }

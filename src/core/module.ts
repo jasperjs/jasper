@@ -4,4 +4,5 @@
     .provider('jasperService', jasper.core.ServiceProvider)
     .provider('jasperFilter', jasper.core.FilterProvider)
     .provider('jasperValue', jasper.core.ValueProvider)
+    .provider('jasperConstant', jasper.core.ConstantProvider)
     .service('$globalEvents', jasper.core.GlobalEventsService);

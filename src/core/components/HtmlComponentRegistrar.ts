@@ -122,7 +122,7 @@
                 return scope;
 
             for (var i = 0; i < def.attributes.length; i++) {
-                var attr = def.attributes[i]
+                var attr = def.attributes[i];
                 if (!attr.name) {
                     throw 'Attribute name not specified of: ' + JSON.stringify(attr);
                 }
