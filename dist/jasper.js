@@ -171,11 +171,11 @@ var jasper;
                     if (!attr.name) {
                         throw 'Attribute name not specified of: ' + JSON.stringify(attr);
                     }
-                    var angularBinding = '='; // default attribute binding
+                    var angularBinding = '=?'; // default attribute binding
                     var type = attr.type || 'data';
                     switch (type.toUpperCase()) {
                         case 'EXPR':
-                            angularBinding = '&';
+                            angularBinding = '&?';
                             break;
                         case 'TEXT':
                             angularBinding = '@';
