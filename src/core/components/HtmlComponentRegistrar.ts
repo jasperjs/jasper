@@ -62,7 +62,6 @@
                             this.bindChangeMethod(propertyName, ctrl, scope);
                             break;
                         case 'EXPR':
-                            //ctrl[propertyName] = scope[propertyName];
                             break;
                         case 'TEXT':
                             this.bindChangeMethod(propertyName, ctrl, scope);

@@ -573,16 +573,8 @@ var jasper;
                                     areaNames = areaNames.split(',');
                                 }
                                 jasperAreasService.loadAreas(areaNames).then(function () {
-                                    var linkFn = element.data('$compileresult');
-                                    if (!linkFn) {
-                                        element.removeClass(processingCssClasses);
-                                        linkFn = $compile(element);
-                                        element.data('$compileresult', linkFn);
-                                    }
-                                    else {
-                                        element.removeClass(processingCssClasses);
-                                    }
-                                    linkFn(scope);
+                                    element.removeClass(processingCssClasses);
+                                    $compile(element)(scope);
                                 });
                             }
                         };
