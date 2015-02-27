@@ -130,7 +130,7 @@
                 var type = attr.type || 'data';
                 switch (type.toUpperCase()) {
                     case 'EXPR':
-                        angularBinding = '&?';
+                        angularBinding = '&';
                         break;
                     case 'TEXT':
                         angularBinding = '@';

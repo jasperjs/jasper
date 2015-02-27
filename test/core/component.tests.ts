@@ -67,8 +67,8 @@
         }
         var ddo = registerDefinitionObject(definition);
 
-        expect(ddo.scope.myExpr).toEqual('&?');
-        expect(ddo.scope.color).toEqual('&?');
+        expect(ddo.scope.myExpr).toEqual('&');
+        expect(ddo.scope.color).toEqual('&');
     });
 
     it('Test template for html component registration', () => {
