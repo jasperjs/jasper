@@ -16,9 +16,4 @@ module jasper.areas {
 
 angular.module('jasperAreas', ['jasperCore'])
     .service('jasperAreasService', jasper.areas.JasperAreasService)
-    .directive('jasperArea', jasper.areas.JasperAreaDirective)
-    .config(['jasperComponentProvider',
-        (jasperComponents: jasper.core.IComponentProvider) => {
-            
-        }
-    ]);
+    .directive('jasperArea', jasper.areas.JasperAreaDirective);

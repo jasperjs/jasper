@@ -558,7 +558,7 @@ var jasper;
     (function (areas) {
         var JasperAreaDirective = (function () {
             function JasperAreaDirective($compile, jasperAreasService) {
-                var processingCssClasses = "ng-hide app-module-loading";
+                var processingCssClasses = "ng-hide jasper-area-loading";
                 var directive = {
                     priority: 1000,
                     terminal: true,
@@ -575,7 +575,6 @@ var jasper;
                                 jasperAreasService.loadAreas(areaNames).then(function () {
                                     var linkFn = element.data('$compileresult');
                                     if (!linkFn) {
-                                        element.removeAttr('data-jasper-module').removeAttr('jasper-area');
                                         element.removeClass(processingCssClasses);
                                         linkFn = $compile(element);
                                         element.data('$compileresult', linkFn);
@@ -756,7 +755,7 @@ var jasper;
                     allDependencies.push(this.loadAreas(depSection, hops));
                 }
                 var defer = this.q.defer();
-                this.q.all(allDependencies).then(function () {
+                var allDependenciesLoaded = function () {
                     //all dependencies loaded
                     if (_this.isAreaLoaded(areas)) {
                         defer.resolve();
@@ -775,7 +774,13 @@ var jasper;
                             defer.resolve();
                         });
                     }
-                });
+                };
+                if (allDependencies.length) {
+                    this.q.all(allDependencies).then(allDependenciesLoaded);
+                }
+                else {
+                    allDependenciesLoaded();
+                }
                 return defer.promise;
             };
             /**
@@ -821,7 +826,7 @@ var jasper;
             function JasperResourcesManager() {
             }
             JasperResourcesManager.prototype.buildScripts = function (scripts) {
-                if (!scripts || scripts.length == 0)
+                if (!scripts || scripts.length === 0)
                     return [];
                 var result = [];
                 for (var i = 0; i < scripts.length; i++) {
@@ -835,7 +840,7 @@ var jasper;
             };
             JasperResourcesManager.prototype.inArray = function (source, val) {
                 for (var i = 0; i < source.length; i++) {
-                    if (source[i] == val)
+                    if (source[i] === val)
                         return true;
                 }
                 return false;
@@ -855,8 +860,7 @@ var jasper;
         areas.JasperResourcesManager = JasperResourcesManager;
     })(areas = jasper.areas || (jasper.areas = {}));
 })(jasper || (jasper = {}));
-angular.module('jasperAreas', ['jasperCore']).service('jasperAreasService', jasper.areas.JasperAreasService).directive('jasperArea', jasper.areas.JasperAreaDirective).config(['jasperComponentProvider', function (jasperComponents) {
-}]);
+angular.module('jasperAreas', ['jasperCore']).service('jasperAreasService', jasper.areas.JasperAreasService).directive('jasperArea', jasper.areas.JasperAreaDirective);
 var jasper;
 (function (jasper) {
     var routing;

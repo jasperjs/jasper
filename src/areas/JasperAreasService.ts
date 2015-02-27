@@ -152,8 +152,8 @@
             }
         }
 
-        initArea(areaName:string) : ng.IPromise<any> {
-            if(!this.config){
+        initArea(areaName:string):ng.IPromise<any> {
+            if (!this.config) {
                 // resolve unregistred areas (bootstrapped)
                 return this.q.when(true);
             }
@@ -166,15 +166,15 @@
             return this.loadiingAreas.addInitializer(areaName);
         }
 
-        loadAreas(areas: string, hops?: number): ng.IPromise<any>;
-        loadAreas(areas: string[], hops?: number): ng.IPromise<any>;
-        loadAreas(areas: any, hops: number = 0): ng.IPromise<any> {
+        loadAreas(areas:string, hops?:number):ng.IPromise<any>;
+        loadAreas(areas:string[], hops?:number):ng.IPromise<any>;
+        loadAreas(areas:any, hops:number = 0):ng.IPromise<any> {
             if (!this.config)
                 throw "Areas not configured";
 
             if (angular.isArray(areas)) {
-                var allAreas: ng.IPromise<any>[] = [];
-                areas.forEach((areaName: string) => {
+                var allAreas:ng.IPromise<any>[] = [];
+                areas.forEach((areaName:string) => {
                     allAreas.push(this.loadAreas(areaName));
                 });
                 return this.q.all(allAreas);
@@ -197,14 +197,14 @@
             }
 
             var defer = this.q.defer();
-            this.q.all(allDependencies).then(() => {
+            var allDependenciesLoaded = ()=> {
                 //all dependencies loaded
                 if (this.isAreaLoaded(areas)) {
                     defer.resolve();
                 }
                 else if (this.loadiingAreas.isLoading(areas)) {
                     // If area is loading now, register a callback when area is loaded
-                    this.loadiingAreas.onAreaLoaded(areas).then(() => defer.resolve());
+                    this.loadiingAreas.onAreaLoaded(areas).then(()=>defer.resolve());
                 } else {
                     // mark area as loading now
                     this.loadiingAreas.startLoading(areas);
@@ -218,8 +218,12 @@
                             defer.resolve();
                         });
                 }
-
-            });
+            };
+            if (allDependencies.length) {
+                this.q.all(allDependencies).then(allDependenciesLoaded);
+            } else {
+                allDependenciesLoaded();
+            }
 
             return defer.promise;
         }

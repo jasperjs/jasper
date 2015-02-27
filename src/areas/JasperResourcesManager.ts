@@ -9,8 +9,7 @@
          static loadedScriptPaths: string[] = [];
 
          private buildScripts(scripts: string[]): string[] {
-             if (!scripts || scripts.length == 0) return [];
-
+             if (!scripts || scripts.length === 0) return [];
              var result: string[] = [];
              for (var i = 0; i < scripts.length; i++) {
                  if (this.inArray(JasperResourcesManager.loadedScriptPaths, scripts[i])) {
@@ -24,7 +23,7 @@
 
          private inArray(source: string[], val: string): boolean {
              for (var i = 0; i < source.length; i++) {
-                 if (source[i] == val)
+                 if (source[i] === val)
                      return true;
              }
              return false;

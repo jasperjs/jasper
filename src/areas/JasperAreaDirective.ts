@@ -3,7 +3,7 @@
         static $inject = ['$compile', 'jasperAreasService'];
 
         constructor($compile: ng.ICompileService, jasperAreasService: JasperAreasService) {
-            var processingCssClasses: string = "ng-hide app-module-loading";
+            var processingCssClasses: string = "ng-hide jasper-area-loading";
 
             var directive: ng.IDirective = {
                 priority: 1000,
@@ -23,9 +23,7 @@
                             jasperAreasService.loadAreas(areaNames).then(() => {
                                 var linkFn = element.data('$compileresult');
                                 if (!linkFn) {
-                                    element.removeAttr('data-jasper-module').removeAttr('jasper-area');
                                     element.removeClass(processingCssClasses);
-
                                     linkFn = $compile(element);
                                     element.data('$compileresult', linkFn);
                                 } else {
