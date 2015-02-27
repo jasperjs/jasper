@@ -45,8 +45,8 @@
         }
         var ddo = registerDefinitionObject(definition);
 
-        expect(ddo.scope.testAttr).toEqual('=');
-        expect(ddo.scope.color).toEqual('=');
+        expect(ddo.scope.testAttr).toEqual('=?');
+        expect(ddo.scope.color).toEqual('=?');
     });
 
     it('Test text attributes for html component registration', () => {
@@ -67,15 +67,15 @@
         }
         var ddo = registerDefinitionObject(definition);
 
-        expect(ddo.scope.myExpr).toEqual('&');
-        expect(ddo.scope.color).toEqual('&');
+        expect(ddo.scope.myExpr).toEqual('&?');
+        expect(ddo.scope.color).toEqual('&?');
     });
 
     it('Test template for html component registration', () => {
         var definition: jasper.core.IHtmlComponentDefinition = {
             name: 'myElement',
             template: '<p>test</p>'
-        }
+        };
         var ddo = registerDefinitionObject(definition);
 
         expect(ddo.template).toEqual(definition.template);
