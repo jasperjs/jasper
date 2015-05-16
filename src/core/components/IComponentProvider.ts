@@ -3,22 +3,16 @@
         register(component: IHtmlComponentDefinition);
     }
 
-    export class ComponentProvider implements IComponentProvider, ng.IServiceProvider {
-
-        static $inject = ['$compileProvider'];
-
+    export class ComponentProvider implements IComponentProvider {
         private componentRegistar: IHtmlRegistrar<IHtmlComponentDefinition>;
 
-        constructor($compileProvider: ng.ICompileProvider) {
-            this.componentRegistar = new core.HtmlComponentRegistrar($compileProvider);
+        constructor() {
+            this.componentRegistar = new core.HtmlComponentRegistrar();
         }
 
         register(component: IHtmlComponentDefinition) {
             this.componentRegistar.register(component);
         }
 
-        $get() {
-            return {};
-        }
     }
 }

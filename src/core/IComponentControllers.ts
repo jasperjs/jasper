@@ -3,6 +3,4 @@
         main: any;
         controllersToPass: any[];
     }
-
-
 }

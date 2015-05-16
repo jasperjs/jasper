@@ -21,7 +21,19 @@
                     sourceMap: true,
                     declaration: true,
                     references: [
-                        'typed/angular.d.ts'
+                        'typed/angular2.d.ts'
+                    ]
+                }
+            },
+            app: {
+                src: ['app/**/*.ts'],
+                options: {
+                    module: 'amd', //or commonjs
+                    target: 'es5', //or es3
+                    sourceMap: false,
+                    references: [
+                        'typed/angular2.d.ts',
+                        'dist/jasper.d.ts'
                     ]
                 }
             },
@@ -33,8 +45,7 @@
                     sourceMap: false,
                     declaration: false,
                     references: [
-                        'typed/angular.d.ts',
-                        'typed/angular-mocks.d.ts',
+                        'typed/angular2.d.ts',
                         'typed/jasmine.d.ts'
                     ]
                 }
@@ -52,7 +63,8 @@
         }
     });
 
-    grunt.registerTask('default', ['typescript', 'uglify']);
+    grunt.registerTask('app', ['typescript:app']);
+    grunt.registerTask('jasperjs', ['typescript:base', 'uglify']);
 
     grunt.registerTask('test', ['typescript:tests', 'karma']);
     grunt.registerTask('test-ci', ['typescript:tests', 'karma:ci']);

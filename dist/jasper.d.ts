@@ -12,10 +12,6 @@ declare module jasper.core {
 declare module jasper.core {
     interface IUtilityService {
         /**
-         * Split requirement for two part - main directive controller and require controllers
-         */
-        getComponentControllers(controllers: any, directive: ng.IDirective): IComponentControllers;
-        /**
          * Create instance of component
          * @param component {function|string}
          */
@@ -37,7 +33,6 @@ declare module jasper.core {
         camelCaseTagName(source: string): string;
     }
     class UtilityService implements IUtilityService {
-        getComponentControllers(controllers: any, directive: ng.IDirective): IComponentControllers;
         getFactoryOf(component: any): Function;
         snakeCase(source: string): string;
         camelCase(source: string): string;
@@ -47,13 +42,10 @@ declare module jasper.core {
 }
 declare module jasper.core {
     class HtmlComponentRegistrar implements IHtmlRegistrar<IHtmlComponentDefinition> {
-        private directive;
         private utility;
-        constructor(compileProvider: ng.ICompileProvider);
+        private static directives;
+        constructor();
         register(component: IHtmlComponentDefinition): void;
-        private bindController(def, scope, ctrl, attrs);
-        private bindChangeMethod(attributeName, ctrl, scope);
-        private createDirectiveFor(def);
         private getScopeDefinition(def);
         private getRequirementsForComponent(component);
     }
@@ -62,12 +54,10 @@ declare module jasper.core {
     interface IComponentProvider {
         register(component: IHtmlComponentDefinition): any;
     }
-    class ComponentProvider implements IComponentProvider, ng.IServiceProvider {
-        static $inject: string[];
+    class ComponentProvider implements IComponentProvider {
         private componentRegistar;
-        constructor($compileProvider: ng.ICompileProvider);
+        constructor();
         register(component: IHtmlComponentDefinition): void;
-        $get(): {};
     }
 }
 declare module jasper {
@@ -177,165 +167,6 @@ declare module jasper.core {
     }
 }
 declare module jasper.core {
-    interface IDecoratorComponentProvider {
-        register(decorator: IHtmlDecoratorDefinition): any;
-    }
-    class DecoratorComponentProvider implements IDecoratorComponentProvider, ng.IServiceProvider {
-        static $inject: string[];
-        private decoratorRegistar;
-        constructor($compileProvider: ng.ICompileProvider);
-        register(decorator: IHtmlDecoratorDefinition): void;
-        $get(): {};
-    }
-}
-declare module jasper.core {
-    class HtmlDecoratorRegistrar implements IHtmlRegistrar<IHtmlDecoratorDefinition> {
-        private directive;
-        private utility;
-        constructor(compileProvider: ng.ICompileProvider);
-        register(component: IHtmlDecoratorDefinition): void;
-        private createDirectiveFor(def);
-        private getRequirementsForComponent(component);
-        private getComponentControllers(controllers, directive);
-    }
-}
-declare module jasper {
-    interface IHtmlDecoratorComponent {
-        /**
-         * Jasper invoke this method, during angular's link phase - when decorator associates with
-         * own html DOM element
-         *
-         * @value - value, passed to the html attribute
-         * @element - html element
-         * @attrs - collection of all attributes of @element
-         * @components - array or single components, that will be required by 'require' property of component definition
-         */
-        link?: (value: any, element: HTMLElement, attrs: any, components: any) => void;
-        /**
-         * Jasper invokes this method when associated value changes
-         */
-        onValueChanged?: (newValue: any, oldValue: any) => void;
-        /**
-         * Jasper invokes this method when associated html element is removed from DOM
-         */
-        destroyComponent(): any;
-    }
-}
-declare module jasper.core {
-    interface IHtmlDecoratorDefinition {
-        /**
-         * Setup the name of decorator. Name reflects the html element attribute name
-         * Need to be specified using camelCase
-         */
-        name: string;
-        /**
-         * Setup the controller of the decorator.
-         * Contains decorator logic
-         * Instance of this object will be available as 'vm' object in the template.
-         */
-        ctrl: any;
-        ctor?: any;
-        /**
-         * Setup that this decorator needs a dependency of another component or decorator within html element.
-         * Referenced components|decorator will be available in the 'link' method of the decorator.
-         */
-        require?: any;
-        /**
-         * Setup that jasper need to evaluate associated attribute value.
-         * If true jasper assign evaluated result of decorator expression
-         */
-        eval?: boolean;
-    }
-}
-declare module jasper.core {
-    interface IFilterProvider {
-        register(filter: IFilterDefinition): any;
-    }
-    class FilterProvider implements IFilterProvider, ng.IServiceProvider {
-        static $inject: string[];
-        private filterRegistar;
-        constructor($filterProvider: ng.IFilterProvider);
-        register(filter: IFilterDefinition): void;
-        $get(): {};
-    }
-}
-declare module jasper.core {
-    class FilterRegistrar implements IHtmlRegistrar<IFilterDefinition> {
-        private filter;
-        private utility;
-        constructor(filterProvider: ng.IFilterProvider);
-        register(def: IFilterDefinition): void;
-    }
-}
-declare module jasper.core {
-    interface IFilterDefinition {
-        /**
-         * Setup the name of filter. Filter can be used, like {{ someExpression | <name> }}
-         */
-        name: string;
-        /**
-         * Setup filter's class constructor
-         */
-        ctor: any;
-    }
-}
-declare module jasper.core {
-    interface IServiceDefinition {
-        /**
-         * Setup the name of service. Service can be injected as '<name>'
-         */
-        name: string;
-        /**
-         * Setup service constructor
-         */
-        ctor: any;
-    }
-}
-declare module jasper.core {
-    interface IServiceProvider {
-        register(decorator: IServiceDefinition): any;
-    }
-    class ServiceProvider implements IServiceProvider, ng.IServiceProvider {
-        static $inject: string[];
-        private serviceRegistar;
-        constructor($provide: any);
-        register(serviceDef: IServiceDefinition): void;
-        $get(): {};
-    }
-}
-declare module jasper.core {
-    class ServiceRegistrar implements IHtmlRegistrar<IServiceDefinition> {
-        private service;
-        private utility;
-        constructor(provide: any);
-        register(def: IServiceDefinition): void;
-    }
-}
-declare module jasper.core {
-    interface IValueProvider {
-        register(name: string, value: any): any;
-    }
-    class ValueProvider implements IValueProvider, ng.IServiceProvider {
-        private provide;
-        static $inject: string[];
-        constructor(provide: any);
-        register(name: string, value: any): void;
-        $get(): ValueProvider;
-    }
-}
-declare module jasper.core {
-    interface IConstantProvider {
-        register(name: string, value: any): any;
-    }
-    class ConstantProvider implements IConstantProvider, ng.IServiceProvider {
-        private provide;
-        static $inject: string[];
-        constructor(provide: any);
-        register(name: string, value: any): void;
-        $get(): ConstantProvider;
-    }
-}
-declare module jasper.core {
     interface ISubscription {
         remove(): any;
     }
@@ -361,95 +192,6 @@ declare module jasper.core {
         private removeSubscription(eventName, listener);
     }
 }
-declare module jasper.core {
-    class JasperComponent {
-        private $$scope;
-        protected $digest(): void;
-        protected $apply(f?: any): void;
-        protected $on(eventName: string, listener: (event: ng.IAngularEvent, ...args: any[]) => any): Function;
-        protected $watch(watchExpression: string, listener?: string, objectEquality?: boolean): Function;
-        protected $watch(watchExpression: string, listener?: (newValue: any, oldValue: any, scope: ng.IScope) => any, objectEquality?: boolean): Function;
-        protected $watch(watchExpression: (scope: ng.IScope) => any, listener?: string, objectEquality?: boolean): Function;
-        protected $watch(watchExpression: (scope: ng.IScope) => any, listener?: (newValue: any, oldValue: any, scope: ng.IScope) => any, objectEquality?: boolean): Function;
-        protected $watchCollection(watchExpression: string, listener: (newValue: any, oldValue: any, scope: ng.IScope) => any): Function;
-        protected $watchCollection(watchExpression: (scope: ng.IScope) => any, listener: (newValue: any, oldValue: any, scope: ng.IScope) => any): Function;
-        protected $watchGroup(watchExpressions: any[], listener: (newValue: any, oldValue: any, scope: ng.IScope) => any): Function;
-        protected $eval(expression?: string, args?: Object): any;
-        protected $evalAsync(expression?: string): void;
-        protected $evalAsync(expression?: (scope: ng.IScope) => any): void;
-        private ensureScope();
-    }
-}
-declare module jasper.areas {
-    class JasperAreaDirective {
-        static $inject: string[];
-        constructor($compile: ng.ICompileService, jasperAreasService: JasperAreasService);
-    }
-}
-declare module jasper.areas {
-    class JasperAreasService {
-        static $inject: string[];
-        /**
-         * Client-side areas configuration
-         */
-        private config;
-        private loadiingAreas;
-        static maxDependencyHops: number;
-        resourceManager: IResourceManager;
-        loadedAreas: string[];
-        q: ng.IQService;
-        constructor($q: ng.IQService);
-        configure(config: any): void;
-        onAreaLoaded(areaName: string): ng.IPromise<any>;
-        initArea(areaName: string): ng.IPromise<any>;
-        loadAreas(areas: string, hops?: number): ng.IPromise<any>;
-        loadAreas(areas: string[], hops?: number): ng.IPromise<any>;
-        /**
-         * Ensures that areas exists in the configuration and return the found area config
-         * @param areaName      name of area
-         */
-        private ensureArea(areaName);
-        private isAreaLoaded(areaname);
-        private prepareUrls(urls);
-    }
-}
-declare module jasper.areas {
-    interface IResourceManager {
-        makeAccessible(scripts: string[], styles: string[], onReady: Function): any;
-    }
-    class JasperResourcesManager implements IResourceManager {
-        static loadedScriptPaths: string[];
-        private buildScripts(scripts);
-        private inArray(source, val);
-        makeAccessible(scripts: string[], styles: string[], onReady: () => void): void;
-    }
-}
-declare var $script: any;
-declare module jasper.areas {
-    interface IAreaSection {
-        scripts: string[];
-        styles: string[];
-        dependencies: string[];
-    }
-}
-declare module jasper.routing {
-    class JasperRouteTableProvider implements IRouteTableProvider {
-        private routeProvider;
-        static $inject: string[];
-        constructor(routeProvider: any);
-        setup(config: IRoutesConfiguration): void;
-        $get(): JasperRouteTableProvider;
-    }
-}
-declare module jasper.routing {
-    interface IRoutesConfiguration {
-        defaultRoutePath: string;
-        routes: any;
-    }
-    interface IRouteTableProvider {
-        setup(config: IRoutesConfiguration): any;
-    }
-}
 declare module jasper {
     interface IJasperStatic {
         /**
@@ -457,69 +199,15 @@ declare module jasper {
          * @param def       component definition
          */
         component(def: core.IHtmlComponentDefinition): any;
-        /**
-         * Register a decorator component
-         * @param def       decorator definition
-         */
-        decorator(def: core.IHtmlDecoratorDefinition): any;
-        /**
-         * Register a filter
-         * @param def       filter definition
-         */
-        filter(def: core.IFilterDefinition): any;
-        /**
-         * Register a service
-         * @param def       service definition
-         */
-        service(def: core.IServiceDefinition): any;
-        /**
-         * Jasper areas service
-         */
-        areas: areas.JasperAreasService;
-        /**
-         * Register a template in template cache
-         * @param key       key to access to template
-         * @param content   html content of the template
-         */
-        template(key: string, content: string): any;
-        /**
-         * Register an AngularJS directive. Use in a case of emergency
-         * @param name      directive name
-         * @param ddo       directive definition object
-         */
-        directive(name: string, ddo: any): any;
-        /**
-         * Register new value
-         * @param name      name of the value
-         * @param value     value (string|object|array|number)
-         */
-        value(name: string, value: any): any;
-        /**
-         * Notify when jasper is ready to work
-         * @param cb
-         */
-        ready(cb?: () => void): any;
-        setup(templateCache: ng.ITemplateCacheService, areasService: areas.JasperAreasService): any;
+        init(componentProvider: core.IComponentProvider): any;
     }
     class JasperStatic implements IJasperStatic {
         private isReady;
         private readyQueue;
         private componentProvider;
-        private decoratorProvider;
-        private serviceProvider;
-        private filtersProvider;
-        private valueProvider;
-        private templateCahce;
         directive: (name: string, ddo: any) => void;
         component(def: core.IHtmlComponentDefinition): void;
-        decorator(def: core.IHtmlDecoratorDefinition): void;
-        filter(def: core.IFilterDefinition): void;
-        service(def: core.IServiceDefinition): void;
-        areas: areas.JasperAreasService;
-        template(key: string, content: string): void;
-        value(name: string, value: any): void;
-        init(componentProvider: core.IComponentProvider, decoratorProvider: core.IDecoratorComponentProvider, serviceProvider: core.IServiceProvider, filterProvider: core.IFilterProvider, valueProvider: core.IValueProvider, directiveFactory: any): void;
-        setup(templateCache: ng.ITemplateCacheService, areasService: areas.JasperAreasService): void;
+        init(componentProvider: core.IComponentProvider): void;
         ready(cb?: () => void): void;
     }
 }

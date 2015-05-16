@@ -1,10 +1,10 @@
 ﻿module jasper.core {
 
     export interface IUtilityService {
-        /**
-         * Split requirement for two part - main directive controller and require controllers
-         */
-        getComponentControllers(controllers, directive:ng.IDirective): IComponentControllers;
+        ///**
+        // * Split requirement for two part - main directive controller and require controllers
+        // */
+        //getComponentControllers(controllers, directive:ng.IDirective): IComponentControllers;
         /**
          * Create instance of component
          * @param component {function|string}
@@ -28,27 +28,27 @@
     }
 
     export class UtilityService implements IUtilityService {
-        getComponentControllers(controllers, directive:ng.IDirective):IComponentControllers {
-            var controllersToPass;
-            var controller:IHtmlComponent;
-
-            if (directive.require && angular.isArray(directive.require)) {
-
-                controller = controllers.shift();
-                controllersToPass = controllers;
-                if (controllersToPass.length === 1) {
-                    controllersToPass = controllersToPass[0];
-                }
-
-            } else {
-                controller = controllers;
-                controllersToPass = controller;
-            }
-            return {
-                main: controller,
-                controllersToPass: controllersToPass
-            }
-        }
+        //getComponentControllers(controllers, directive:ng.IDirective):IComponentControllers {
+        //    var controllersToPass;
+        //    var controller:IHtmlComponent;
+        //
+        //    if (directive.require && angular.isArray(directive.require)) {
+        //
+        //        controller = controllers.shift();
+        //        controllersToPass = controllers;
+        //        if (controllersToPass.length === 1) {
+        //            controllersToPass = controllersToPass[0];
+        //        }
+        //
+        //    } else {
+        //        controller = controllers;
+        //        controllersToPass = controller;
+        //    }
+        //    return {
+        //        main: controller,
+        //        controllersToPass: controllersToPass
+        //    }
+        //}
 
         getFactoryOf(component:any):Function {
             if (angular.isString(component)) {
