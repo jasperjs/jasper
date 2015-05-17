@@ -1,8 +1,14 @@
-<p>
-    {{title}}
-</p>
+<h3>{{title}}</h3>
 <ul>
     <li *for="#name of names">
         <span>{{name}}</span>
     </li>
 </ul>
+
+<p>
+    my-component color is: {{color}}
+</p>
+
+
+<button type="button" (click)="changeColor()">CHANGE COLOR</button>
+<button type="button" (click)="emit()">EMIT</button>

@@ -42,22 +42,14 @@ declare module jasper.core {
 }
 declare module jasper.core {
     class HtmlComponentRegistrar implements IHtmlRegistrar<IHtmlComponentDefinition> {
+        private svcRegistrar;
         private utility;
         private static directives;
-        constructor();
+        constructor(svcRegistrar: IServiceRegistrar);
         register(component: IHtmlComponentDefinition): void;
-        private getScopeDefinition(def);
-        private getRequirementsForComponent(component);
-    }
-}
-declare module jasper.core {
-    interface IComponentProvider {
-        register(component: IHtmlComponentDefinition): any;
-    }
-    class ComponentProvider implements IComponentProvider {
-        private componentRegistar;
-        constructor();
-        register(component: IHtmlComponentDefinition): void;
+        private applyAttributes(ng2ComponentDef, def);
+        private applyLifecycle(ng2ComponentDef, component);
+        private applyInjectables(ng2ComponentDef, component);
     }
 }
 declare module jasper {
@@ -164,6 +156,34 @@ declare module jasper.core {
          * Referenced components will be available in the 'link' method of the component.
          */
         require?: any;
+        /**
+         * If true jasper will not wrap the component's controller. (Default - false)
+         */
+        noWrap?: boolean;
+    }
+}
+declare module jasper.core {
+    interface IServiceDefinition {
+        /**
+         * Setup the name of service. Service can be injected as '<name>'
+         */
+        name: string;
+        /**
+         * Setup service constructor
+         */
+        ctor: any;
+    }
+}
+declare module jasper.core {
+    interface IServiceRegistrar extends IHtmlRegistrar<IServiceDefinition> {
+        getTypeByName(name: string): any;
+    }
+    class ServiceRegistrar implements IServiceRegistrar {
+        private utility;
+        private static allServices;
+        constructor();
+        register(def: IServiceDefinition): void;
+        getTypeByName(name: string): any;
     }
 }
 declare module jasper.core {
@@ -192,6 +212,7 @@ declare module jasper.core {
         private removeSubscription(eventName, listener);
     }
 }
+declare var jsp: jasper.IJasperStatic;
 declare module jasper {
     interface IJasperStatic {
         /**
@@ -199,18 +220,16 @@ declare module jasper {
          * @param def       component definition
          */
         component(def: core.IHtmlComponentDefinition): any;
-        init(componentProvider: core.IComponentProvider): any;
+        service(def: core.IServiceDefinition): any;
     }
     class JasperStatic implements IJasperStatic {
         private isReady;
         private readyQueue;
-        private componentProvider;
-        directive: (name: string, ddo: any) => void;
+        private componentRegistrar;
+        private serviceRegistrar;
+        constructor();
         component(def: core.IHtmlComponentDefinition): void;
-        init(componentProvider: core.IComponentProvider): void;
+        service(def: core.IServiceDefinition): void;
         ready(cb?: () => void): void;
     }
-}
-declare var jsp: jasper.IJasperStatic;
-declare module jasper {
 }

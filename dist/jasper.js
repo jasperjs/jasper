@@ -78,7 +78,8 @@ var jasper;
     var core;
     (function (core) {
         var HtmlComponentRegistrar = (function () {
-            function HtmlComponentRegistrar() {
+            function HtmlComponentRegistrar(svcRegistrar) {
+                this.svcRegistrar = svcRegistrar;
                 this.utility = new core.UtilityService();
                 HtmlComponentRegistrar.directives.push(angular.If);
                 HtmlComponentRegistrar.directives.push(angular.For);
@@ -96,111 +97,121 @@ var jasper;
                 }
                 ng2ViewDef.directives = HtmlComponentRegistrar.directives;
                 //TODO process $inject field
-                //TODO attributes property
-                var ctrl = component.ctrl;
-                ctrl['annotations'] = [new angular.ComponentAnnotation(ng2ComponentDef), new angular.ViewAnnotation(ng2ViewDef)];
+                this.applyInjectables(ng2ComponentDef, component);
+                this.applyAttributes(ng2ComponentDef, component);
+                this.applyLifecycle(ng2ComponentDef, component);
+                var ctrl = component.noWrap ? component.ctrl : JasperComponentWrapperFactory(component.ctrl, ng2ComponentDef.events);
+                if (!ctrl['annotations']) {
+                    ctrl['annotations'] = [];
+                }
+                ctrl['annotations'].push(new angular.ComponentAnnotation(ng2ComponentDef));
+                ctrl['annotations'].push(new angular.ViewAnnotation(ng2ViewDef));
                 HtmlComponentRegistrar.directives.push(ctrl);
             };
-            //private bindController(def:IHtmlComponentDefinition, scope:ng.IScope, ctrl:IHtmlComponent, attrs) {
-            //    if (!def.attributes)
-            //        return;
-            //
-            //    for (var i = 0; i < def.attributes.length; i++) {
-            //        var attrName = def.attributes[i].name;
-            //        var attrType = def.attributes[i].type || 'data';
-            //
-            //        var propertyName = this.utility.camelCaseTagName(attrName);
-            //
-            //        if (angular.isDefined(attrs[propertyName])) {
-            //
-            //            switch (attrType.toUpperCase()) {
-            //                case 'DATA':
-            //                    this.bindChangeMethod(propertyName, ctrl, scope);
-            //                    break;
-            //                case 'EXPR':
-            //                    break;
-            //                case 'TEXT':
-            //                    this.bindChangeMethod(propertyName, ctrl, scope);
-            //                    break;
-            //                default:
-            //                    throw 'Unknown attribute type: ' + attrType
-            //            }
-            //
-            //        }
-            //    }
-            //
-            //}
-            //private bindChangeMethod(attributeName:string
-            //    , ctrl:IHtmlComponent
-            //    , scope:ng.IScope) {
-            //
-            //    var methodName = attributeName + '_change';
-            //    if (ctrl[methodName] && angular.isFunction(ctrl[methodName])) {
-            //        scope.$watch(()=> ctrl[attributeName], (val, oldVal) => {
-            //            if (val === oldVal)
-            //                return; // do not pass property id it does not change
-            //            ctrl[methodName](val, oldVal);
-            //        });
-            //    }
-            //
-            //}
-            HtmlComponentRegistrar.prototype.getScopeDefinition = function (def) {
-                var scope = {};
+            HtmlComponentRegistrar.prototype.applyAttributes = function (ng2ComponentDef, def) {
                 if (!def.attributes)
-                    return scope;
+                    return;
+                var ngProperties = {};
+                var ngEvents = [];
                 for (var i = 0; i < def.attributes.length; i++) {
-                    var attr = def.attributes[i];
-                    if (!attr.name) {
-                        throw 'Attribute name not specified of: ' + JSON.stringify(attr);
-                    }
-                    var angularBinding = '=?'; // default attribute binding
-                    var type = attr.type || 'data';
-                    switch (type.toUpperCase()) {
-                        case 'EXPR':
-                            angularBinding = '&';
-                            break;
+                    var attrName = def.attributes[i].name;
+                    var attrType = def.attributes[i].type || 'data';
+                    switch (attrType.toUpperCase()) {
+                        case 'DATA':
                         case 'TEXT':
-                            angularBinding = '@';
+                            ngProperties[attrName] = attrName; // one to one binding
                             break;
+                        case 'EXPR':
+                            ngEvents.push(this.utility.camelCaseTagName(attrName));
+                            break;
+                        default:
+                            throw 'Unknown attribute type: ' + attrType;
                     }
-                    var camelCaseAttrName = this.utility.camelCaseTagName(attr.name);
-                    scope[camelCaseAttrName] = angularBinding;
                 }
-                return scope;
+                ng2ComponentDef.properties = ngProperties;
+                ng2ComponentDef.events = ngEvents;
             };
-            HtmlComponentRegistrar.prototype.getRequirementsForComponent = function (component) {
-                if (angular.isDefined(component.require)) {
-                    var req = [component.name];
-                    if (angular.isArray(component.require))
-                        req = req.concat(component.require);
-                    else
-                        req.push(component.require);
-                    return req;
+            HtmlComponentRegistrar.prototype.applyLifecycle = function (ng2ComponentDef, component) {
+                var lifeCycles = ['onDestroy', 'onChange', 'onAllChangesDone'];
+                ng2ComponentDef.lifecycle = [];
+                var prototype = component.ctrl.prototype;
+                for (var i = 0; i < lifeCycles.length; i++) {
+                    var lf = lifeCycles[i];
+                    if (prototype[lf] && typeof (prototype[lf]) === 'function' && angular[lf]) {
+                        ng2ComponentDef.lifecycle.push(angular[lf]);
+                    }
                 }
-                else {
-                    return component.name;
+            };
+            HtmlComponentRegistrar.prototype.applyInjectables = function (ng2ComponentDef, component) {
+                var legacyInjects = component.ctrl['$inject'];
+                if (!legacyInjects)
+                    return;
+                var injectables = [];
+                var parameters = [];
+                for (var i = 0; i < legacyInjects.length; i++) {
+                    var serviceNameToInject = legacyInjects[i];
+                    var svcType = this.svcRegistrar.getTypeByName(serviceNameToInject);
+                    if (!svcType) {
+                        throw 'Service with name \"' + serviceNameToInject + '\" does not registred';
+                    }
+                    injectables.push(svcType);
+                    parameters.push([svcType]);
                 }
+                component.ctrl['parameters'] = parameters;
+                ng2ComponentDef['injectables'] = injectables;
             };
             HtmlComponentRegistrar.directives = [];
             return HtmlComponentRegistrar;
         })();
         core.HtmlComponentRegistrar = HtmlComponentRegistrar;
+        function JasperComponentWrapperFactory(ctrl, events) {
+            var wrapper = function JasperCompnentWrapper() {
+                if (ctrl) {
+                    //var obj = Object.create(ctrl.prototype);
+                    // TODO event system compatibility
+                    //for (var i = 0; i < events.length; i++) {
+                    //    var evtName = events[i]; var evtEmitterProp = '$$jsp' + evtName];
+                    //    obj[evtEmitterProp] = new angular.EventEmitter();
+                    //
+                    //    obj[evtName] = function(params){
+                    //        obj[evtEmitterProp].next();
+                    //    }
+                    //}
+                    ctrl.apply(this, arguments);
+                    // TODO invoke initializeComponent()
+                    // TODO check if link function defined - drop NotSupportException
+                    return this;
+                }
+                return this;
+            };
+            if (ctrl) {
+                wrapper.prototype = ctrl.prototype;
+            }
+            return wrapper;
+        }
     })(core = jasper.core || (jasper.core = {}));
 })(jasper || (jasper = {}));
 var jasper;
 (function (jasper) {
     var core;
     (function (core) {
-        var ComponentProvider = (function () {
-            function ComponentProvider() {
-                this.componentRegistar = new core.HtmlComponentRegistrar();
+        var ServiceRegistrar = (function () {
+            function ServiceRegistrar() {
+                this.utility = new core.UtilityService();
             }
-            ComponentProvider.prototype.register = function (component) {
-                this.componentRegistar.register(component);
+            ServiceRegistrar.prototype.register = function (def) {
+                if (!def.ctor) {
+                    throw new Error(def.name + ' must specify constructor');
+                }
+                ServiceRegistrar.allServices[def.name] = def.ctor;
             };
-            return ComponentProvider;
+            ServiceRegistrar.prototype.getTypeByName = function (name) {
+                return ServiceRegistrar.allServices[name];
+            };
+            ServiceRegistrar.allServices = {};
+            return ServiceRegistrar;
         })();
-        core.ComponentProvider = ComponentProvider;
+        core.ServiceRegistrar = ServiceRegistrar;
     })(core = jasper.core || (jasper.core = {}));
 })(jasper || (jasper = {}));
 var jasper;
@@ -256,12 +267,14 @@ var jasper;
     var JasperStatic = (function () {
         function JasperStatic() {
             this.readyQueue = [];
+            this.serviceRegistrar = new jasper.core.ServiceRegistrar();
+            this.componentRegistrar = new jasper.core.HtmlComponentRegistrar(this.serviceRegistrar);
         }
         JasperStatic.prototype.component = function (def) {
-            this.componentProvider.register(def);
+            this.componentRegistrar.register(def);
         };
-        JasperStatic.prototype.init = function (componentProvider) {
-            this.componentProvider = componentProvider;
+        JasperStatic.prototype.service = function (def) {
+            this.serviceRegistrar.register(def);
         };
         JasperStatic.prototype.ready = function (cb) {
             if (!cb) {
@@ -284,20 +297,17 @@ var jasper;
     jasper.JasperStatic = JasperStatic;
     window['jsp'] = new JasperStatic();
 })(jasper || (jasper = {}));
-var jasper;
-(function (jasper) {
-    window['jsp'].init(new jasper.core.ComponentProvider());
-})(jasper || (jasper = {}));
 // CORE
 /// <reference path="core/IComponentControllers.ts" />
 /// <reference path="core/IHtmlRegistrar.ts" />
 /// <reference path="core/UtilityService.ts" />
 /// <reference path="core/components/HtmlComponentRegistrar.ts" />
-/// <reference path="core/components/IComponentProvider.ts" />
 /// <reference path="core/components/IHtmlComponent.ts" />
 /// <reference path="core/components/IAttributeBinding.ts" />
 /// <reference path="core/components/IHtmlComponentDefinition.ts" />
+// SERVICES
+/// <reference path="core/services/IServiceDefinition.ts" />
+/// <reference path="core/services/ServiceRegistrar.ts" />
 /// <reference path="core/GlobalEvents.ts" />
 /// <reference path="JasperStatic.ts" />
-/// <reference path="jasper.ts" />
 //# sourceMappingURL=jasper.js.map

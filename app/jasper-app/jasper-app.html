@@ -1,5 +1,9 @@
 <p>
     {{title}}
 </p>
+<p>
+    jasper-app color is: {{color}}
+    <button type="button" (click)="changeColor()">CHANGE COLOR</button>
+</p>
 
-<my-component></my-component>
+<my-component (on-select)="showAlert($type)" type="post" [color]="color"></my-component>

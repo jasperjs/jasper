@@ -66,6 +66,8 @@
     grunt.registerTask('app', ['typescript:app']);
     grunt.registerTask('jasperjs', ['typescript:base', 'uglify']);
 
+    grunt.registerTask('default', ['jasperjs', 'app']);
+
     grunt.registerTask('test', ['typescript:tests', 'karma']);
     grunt.registerTask('test-ci', ['typescript:tests', 'karma:ci']);
 };

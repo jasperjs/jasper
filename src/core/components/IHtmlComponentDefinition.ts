@@ -53,5 +53,10 @@
          * Referenced components will be available in the 'link' method of the component.
          */
         require?: any;
+
+        /**
+         * If true jasper will not wrap the component's controller. (Default - false)
+         */
+        noWrap?: boolean;
     }
 } 

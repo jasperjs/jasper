@@ -1,3 +1,4 @@
+declare var jsp: jasper.IJasperStatic;
 module jasper {
     export interface IJasperStatic {
         /**
@@ -6,7 +7,7 @@ module jasper {
          */
         component(def: core.IHtmlComponentDefinition);
 
-        init(componentProvider: core.IComponentProvider);
+        service(def: core.IServiceDefinition);
     }
 
     export class JasperStatic implements IJasperStatic {
@@ -14,20 +15,21 @@ module jasper {
         private isReady: boolean;
         private readyQueue: Array<() => void> = [];
 
-        private componentProvider: core.IComponentProvider;
+        private componentRegistrar: core.IHtmlRegistrar<core.IHtmlComponentDefinition>;
+        private serviceRegistrar: core.IHtmlRegistrar<core.IServiceDefinition>;
 
-
-        directive: (name: string, ddo: any) => void;
+        constructor() {
+            this.serviceRegistrar = new core.ServiceRegistrar();
+            this.componentRegistrar = new core.HtmlComponentRegistrar(<core.IServiceRegistrar>this.serviceRegistrar);
+        }
 
         component(def: core.IHtmlComponentDefinition) {
-            this.componentProvider.register(def);
+            this.componentRegistrar.register(def);
         }
 
-
-        init(componentProvider: core.IComponentProvider) {
-            this.componentProvider = componentProvider;
+        service(def: core.IServiceDefinition){
+            this.serviceRegistrar.register(def);
         }
-
 
         ready(cb?: ()=>void) {
             if(!cb) {
