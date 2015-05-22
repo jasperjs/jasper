@@ -154,6 +154,8 @@
                             };
                             break;
                         default:
+                            if (!attrs.hasOwnProperty(attrName)) break;
+
                             var attrValue = parentScope.$eval(attrs[attrName]);
                             this[ctrlProppertyName] = attrValue;
                             parentScope.$watch(attrs[attrName], (val, oldVal) => {

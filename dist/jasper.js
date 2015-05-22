@@ -209,6 +209,8 @@ var jasper;
                                 };
                                 break;
                             default:
+                                if (!attrs.hasOwnProperty(attrName))
+                                    break;
                                 var attrValue = parentScope.$eval(attrs[attrName]);
                                 _this[ctrlProppertyName] = attrValue;
                                 parentScope.$watch(attrs[attrName], function (val, oldVal) {
