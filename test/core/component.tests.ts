@@ -1,4 +1,4 @@
-﻿describe('Core component tests', () => {
+﻿describe('Jasper component', () => {
 
     var registrar: jasper.core.HtmlComponentRegistrar, compileProvider: jasper.mocks.TestCompileProvider;
 
@@ -33,42 +33,6 @@
         var ddo = registerDefinitionObject(definition);
 
         expect(ddo.restrict).toEqual('E');
-    });
-
-    it('Test attributes for html component registration', () => {
-        var definition: jasper.core.IHtmlComponentDefinition = {
-            name: 'myElement',
-            attributes: [
-                { name: 'test-attr' },
-                { name: 'color' }
-            ]
-        }
-        var ddo = registerDefinitionObject(definition);
-
-        expect(ddo.scope.testAttr).toEqual('=?');
-        expect(ddo.scope.color).toEqual('=?');
-    });
-
-    it('Test text attributes for html component registration', () => {
-        var definition: jasper.core.IHtmlComponentDefinition = {
-            name: 'myElement',
-            attributes: [{ name: 'test-attr',  type: 'text' }, { name: 'color', type:'text' }]
-        }
-        var ddo = registerDefinitionObject(definition);
-
-        expect(ddo.scope.testAttr).toEqual('@');
-        expect(ddo.scope.color).toEqual('@');
-    });
-
-    it('Test expression attributes for html component registration', () => {
-        var definition: jasper.core.IHtmlComponentDefinition = {
-            name: 'myElement',
-            attributes: [{ name: 'my-expr',  type: 'expr' }, { name: 'color', type:'expr' }]
-        }
-        var ddo = registerDefinitionObject(definition);
-
-        expect(ddo.scope.myExpr).toEqual('&');
-        expect(ddo.scope.color).toEqual('&');
     });
 
     it('Test template for html component registration', () => {
@@ -131,7 +95,7 @@
         expect(elm.html()).toEqual('<p>hello</p>');
     }));
 
-    it('Test component attributes binding', inject(($compile, $rootScope) => {
+    it('should have initialized fields in InitializeComponent method', inject(($compile, $rootScope) => {
 
         var attrValue;
         // test component
@@ -199,7 +163,7 @@
         expect(attrValue).toEqual('some text');
     }));
 
-    it('Test component expressions binding', inject(($compile, $rootScope) => {
+    it('should bind function to invoke external expression', inject(($compile, $rootScope) => {
         var attrValue;
         // test component
         var component = function() {
@@ -223,7 +187,7 @@
         expect(attrValue()).toEqual('called');
     }));
 
-    it('Test component destroy method invocation', inject(($compile, $rootScope) => {
+    it('should invoke DestroyComponent method when scope is destroyed', inject(($compile, $rootScope) => {
         var destroyInvoked;
         // test component
         var component = function() {

@@ -16,11 +16,8 @@
             if (ddo.controller) {
                 ddo.compile = () => {
                     return {
-                        pre: (scope:ng.IScope, element:any, attrs:ng.IAttributes, controllers:any, tranclude:any) => {
+                        pre: (scope:ng.IScope, element:any, attrs:ng.IAttributes, controllers:any) => {
                             var ctrls = this.utility.getComponentControllers(controllers, ddo);
-                            this.bindController(component, scope, ctrls.main, attrs);
-
-                            ctrls.main.$$scope = scope;
 
                             if (ctrls.main.initializeComponent && angular.isFunction(ctrls.main.initializeComponent))
                                 ctrls.main.initializeComponent();
@@ -43,76 +40,6 @@
             }
 
             this.directive(component.name, () => ddo);
-        }
-
-        private bindController(def:IHtmlComponentDefinition, scope:ng.IScope, ctrl:IHtmlComponent, attrs) {
-            if (!def.attributes)
-                return;
-
-            for (var i = 0; i < def.attributes.length; i++) {
-                var attrName = def.attributes[i].name;
-                var attrType = def.attributes[i].type || 'data';
-
-                var propertyName = this.utility.camelCaseTagName(attrName);
-
-                if (angular.isDefined(attrs[propertyName])) {
-
-                    switch (attrType.toUpperCase()) {
-                        case 'DATA':
-                            this.bindChangeMethod(propertyName, ctrl, scope);
-                            break;
-                        case 'EXPR':
-                            break;
-                        case 'TEXT':
-                            this.bindChangeMethod(propertyName, ctrl, scope);
-                            break;
-                        default:
-                            throw 'Unknown attribute type: ' + attrType
-                    }
-
-                }
-            }
-
-        }
-
-        private bindChangeMethod(attributeName:string
-            , ctrl:IHtmlComponent
-            , scope:ng.IScope) {
-
-            var methodName = attributeName + '_change';
-            if (ctrl[methodName] && angular.isFunction(ctrl[methodName])) {
-                scope.$watch(()=> ctrl[attributeName], (val, oldVal) => {
-                    if (val === oldVal)
-                        return; // do not pass property id it does not change
-                    ctrl[methodName](val, oldVal);
-                });
-            }
-
-        }
-
-        private createDirectiveFor(def:IHtmlComponentDefinition):ng.IDirective {
-            var directive:ng.IDirective = {
-                restrict: 'E',
-                scope: this.getScopeDefinition(def)
-            };
-
-            var ctrl = def.ctrl || def.ctor;
-            if (ctrl) {
-                directive.bindToController = true;
-                directive.controller = this.utility.getFactoryOf(ctrl);
-                directive.controllerAs = 'vm';
-            }
-
-            directive.transclude = def.transclude === 'true' ? true : def.transclude;
-            directive.templateUrl = def.templateUrl;
-            directive.replace = def.replace;
-
-            if (angular.isDefined(def.template))
-                directive.template = def.template;
-
-            directive.require = this.getRequirementsForComponent(def);
-
-            return directive;
         }
 
         private getScopeDefinition(def:IHtmlComponentDefinition) {
@@ -142,6 +69,33 @@
             return scope;
         }
 
+        private createDirectiveFor(def:IHtmlComponentDefinition):ng.IDirective {
+            var directive:ng.IDirective = {
+                restrict: 'E'
+            };
+
+            var ctrl = def.ctrl || def.ctor;
+            if (ctrl) {
+                var ctor = this.utility.getFactoryOf(ctrl);
+                directive.controller = JasperComponentWrapperFactory(ctor, def.attributes, this.utility);
+                directive.controllerAs = 'vm';
+                directive.scope= {};
+            }else{
+                directive.scope = this.getScopeDefinition(def);
+            }
+
+            directive.transclude = def.transclude === 'true' ? true : def.transclude;
+            directive.templateUrl = def.templateUrl;
+            directive.replace = def.replace;
+
+            if (angular.isDefined(def.template))
+                directive.template = def.template;
+
+            directive.require = this.getRequirementsForComponent(def);
+
+            return directive;
+        }
+
         private getRequirementsForComponent(component:IHtmlComponentDefinition) {
             if (angular.isDefined(component.require)) {
                 var req = [component.name];
@@ -156,5 +110,74 @@
             }
         }
 
+
+    }
+
+    function JasperComponentWrapperFactory(ctor:any, attributes:IAttributeBinding[], utility:IUtilityService) {
+        var additionalInjectables = ['$scope', '$attrs', '$parse'];
+        // add some injectables to the component
+        var wrapperInject = additionalInjectables.concat(ctor.$inject || []);
+        var wrapper = function JasperCompnentWrapper(scope:ng.IScope, attrs:any, $parse:ng.IParseService) {
+            this.$$scope = scope;
+
+            var parentScope = scope.$parent;
+            if (attributes) {
+                attributes.forEach(attrBinding=> {
+                    var attrName = utility.camelCaseTagName(attrBinding.name);
+                    var ctrlProppertyName = attrBinding.ctrlName || attrName;
+                    switch (attrBinding.type) {
+                        case 'text':
+                            if (!attrs.hasOwnProperty(attrName)) break;
+                            this[ctrlProppertyName] = attrs[attrName];
+                            attrs.$observe(attrName, (val, oldVal)=> {
+                                this[ctrlProppertyName] = val;
+                                triggerChangeEvent(this, ctrlProppertyName, val, oldVal);
+                            });
+                            break;
+                        case 'expr':
+                            // Don't assign Object.prototype method to scope
+                            if (!attrs.hasOwnProperty(attrName)) {
+                                this[ctrlProppertyName] = angular.noop;
+                                break;
+                            }
+
+                            var parentGet = $parse(attrs[attrName]);
+
+                            // Don't assign noop to destination if expression is not valid
+                            if (parentGet === angular.noop) {
+                                this[ctrlProppertyName] = angular.noop;
+                                break;
+                            }
+
+                            this[ctrlProppertyName] = function (locals) {
+                                return parentGet(parentScope, locals);
+                            };
+                            break;
+                        default:
+                            var attrValue = parentScope.$eval(attrs[attrName]);
+                            this[ctrlProppertyName] = attrValue;
+                            parentScope.$watch(attrs[attrName], (val, oldVal) => {
+                                this[ctrlProppertyName] = val;
+                                triggerChangeEvent(this, ctrlProppertyName, val, oldVal);
+                            });
+                            break;
+                    }
+                });
+            }
+            ctor.apply(this, Array.prototype.slice.call(arguments, additionalInjectables.length, arguments.length));
+            return this;
+        };
+        wrapper.prototype = ctor.prototype;
+        wrapper.$inject = wrapperInject;
+        return wrapper;
+    }
+
+    function triggerChangeEvent(ctrl:any, propertyName:string, newValue:any, oldValue:any) {
+        if (newValue === oldValue)
+            return; // do not pass property id it does not change
+        var methodName = propertyName + '_change';
+        if (ctrl[methodName] && angular.isFunction(ctrl[methodName])) {
+            ctrl[methodName].call(ctrl, newValue, oldValue);
+        }
     }
 } 

@@ -86,10 +86,8 @@ var jasper;
                 if (ddo.controller) {
                     ddo.compile = function () {
                         return {
-                            pre: function (scope, element, attrs, controllers, tranclude) {
+                            pre: function (scope, element, attrs, controllers) {
                                 var ctrls = _this.utility.getComponentControllers(controllers, ddo);
-                                _this.bindController(component, scope, ctrls.main, attrs);
-                                ctrls.main.$$scope = scope;
                                 if (ctrls.main.initializeComponent && angular.isFunction(ctrls.main.initializeComponent))
                                     ctrls.main.initializeComponent();
                                 if (ctrls.main.destroyComponent && angular.isFunction(ctrls.main.destroyComponent)) {
@@ -109,58 +107,6 @@ var jasper;
                     };
                 }
                 this.directive(component.name, function () { return ddo; });
-            };
-            HtmlComponentRegistrar.prototype.bindController = function (def, scope, ctrl, attrs) {
-                if (!def.attributes)
-                    return;
-                for (var i = 0; i < def.attributes.length; i++) {
-                    var attrName = def.attributes[i].name;
-                    var attrType = def.attributes[i].type || 'data';
-                    var propertyName = this.utility.camelCaseTagName(attrName);
-                    if (angular.isDefined(attrs[propertyName])) {
-                        switch (attrType.toUpperCase()) {
-                            case 'DATA':
-                                this.bindChangeMethod(propertyName, ctrl, scope);
-                                break;
-                            case 'EXPR':
-                                break;
-                            case 'TEXT':
-                                this.bindChangeMethod(propertyName, ctrl, scope);
-                                break;
-                            default:
-                                throw 'Unknown attribute type: ' + attrType;
-                        }
-                    }
-                }
-            };
-            HtmlComponentRegistrar.prototype.bindChangeMethod = function (attributeName, ctrl, scope) {
-                var methodName = attributeName + '_change';
-                if (ctrl[methodName] && angular.isFunction(ctrl[methodName])) {
-                    scope.$watch(function () { return ctrl[attributeName]; }, function (val, oldVal) {
-                        if (val === oldVal)
-                            return; // do not pass property id it does not change
-                        ctrl[methodName](val, oldVal);
-                    });
-                }
-            };
-            HtmlComponentRegistrar.prototype.createDirectiveFor = function (def) {
-                var directive = {
-                    restrict: 'E',
-                    scope: this.getScopeDefinition(def)
-                };
-                var ctrl = def.ctrl || def.ctor;
-                if (ctrl) {
-                    directive.bindToController = true;
-                    directive.controller = this.utility.getFactoryOf(ctrl);
-                    directive.controllerAs = 'vm';
-                }
-                directive.transclude = def.transclude === 'true' ? true : def.transclude;
-                directive.templateUrl = def.templateUrl;
-                directive.replace = def.replace;
-                if (angular.isDefined(def.template))
-                    directive.template = def.template;
-                directive.require = this.getRequirementsForComponent(def);
-                return directive;
             };
             HtmlComponentRegistrar.prototype.getScopeDefinition = function (def) {
                 var scope = {};
@@ -186,6 +132,28 @@ var jasper;
                 }
                 return scope;
             };
+            HtmlComponentRegistrar.prototype.createDirectiveFor = function (def) {
+                var directive = {
+                    restrict: 'E'
+                };
+                var ctrl = def.ctrl || def.ctor;
+                if (ctrl) {
+                    var ctor = this.utility.getFactoryOf(ctrl);
+                    directive.controller = JasperComponentWrapperFactory(ctor, def.attributes, this.utility);
+                    directive.controllerAs = 'vm';
+                    directive.scope = {};
+                }
+                else {
+                    directive.scope = this.getScopeDefinition(def);
+                }
+                directive.transclude = def.transclude === 'true' ? true : def.transclude;
+                directive.templateUrl = def.templateUrl;
+                directive.replace = def.replace;
+                if (angular.isDefined(def.template))
+                    directive.template = def.template;
+                directive.require = this.getRequirementsForComponent(def);
+                return directive;
+            };
             HtmlComponentRegistrar.prototype.getRequirementsForComponent = function (component) {
                 if (angular.isDefined(component.require)) {
                     var req = [component.name];
@@ -202,6 +170,70 @@ var jasper;
             return HtmlComponentRegistrar;
         })();
         core.HtmlComponentRegistrar = HtmlComponentRegistrar;
+        function JasperComponentWrapperFactory(ctor, attributes, utility) {
+            var additionalInjectables = ['$scope', '$attrs', '$parse'];
+            // add some injectables to the component
+            var wrapperInject = additionalInjectables.concat(ctor.$inject || []);
+            var wrapper = function JasperCompnentWrapper(scope, attrs, $parse) {
+                var _this = this;
+                this.$$scope = scope;
+                var parentScope = scope.$parent;
+                if (attributes) {
+                    attributes.forEach(function (attrBinding) {
+                        var attrName = utility.camelCaseTagName(attrBinding.name);
+                        var ctrlProppertyName = attrBinding.ctrlName || attrName;
+                        switch (attrBinding.type) {
+                            case 'text':
+                                if (!attrs.hasOwnProperty(attrName))
+                                    break;
+                                _this[ctrlProppertyName] = attrs[attrName];
+                                attrs.$observe(attrName, function (val, oldVal) {
+                                    _this[ctrlProppertyName] = val;
+                                    triggerChangeEvent(_this, ctrlProppertyName, val, oldVal);
+                                });
+                                break;
+                            case 'expr':
+                                // Don't assign Object.prototype method to scope
+                                if (!attrs.hasOwnProperty(attrName)) {
+                                    _this[ctrlProppertyName] = angular.noop;
+                                    break;
+                                }
+                                var parentGet = $parse(attrs[attrName]);
+                                // Don't assign noop to destination if expression is not valid
+                                if (parentGet === angular.noop) {
+                                    _this[ctrlProppertyName] = angular.noop;
+                                    break;
+                                }
+                                _this[ctrlProppertyName] = function (locals) {
+                                    return parentGet(parentScope, locals);
+                                };
+                                break;
+                            default:
+                                var attrValue = parentScope.$eval(attrs[attrName]);
+                                _this[ctrlProppertyName] = attrValue;
+                                parentScope.$watch(attrs[attrName], function (val, oldVal) {
+                                    _this[ctrlProppertyName] = val;
+                                    triggerChangeEvent(_this, ctrlProppertyName, val, oldVal);
+                                });
+                                break;
+                        }
+                    });
+                }
+                ctor.apply(this, Array.prototype.slice.call(arguments, additionalInjectables.length, arguments.length));
+                return this;
+            };
+            wrapper.prototype = ctor.prototype;
+            wrapper.$inject = wrapperInject;
+            return wrapper;
+        }
+        function triggerChangeEvent(ctrl, propertyName, newValue, oldValue) {
+            if (newValue === oldValue)
+                return; // do not pass property id it does not change
+            var methodName = propertyName + '_change';
+            if (ctrl[methodName] && angular.isFunction(ctrl[methodName])) {
+                ctrl[methodName].call(ctrl, newValue, oldValue);
+            }
+        }
     })(core = jasper.core || (jasper.core = {}));
 })(jasper || (jasper = {}));
 var jasper;
@@ -710,17 +742,18 @@ var jasper;
                     return this.loadAreas(areaName);
                 }
             };
-            JasperAreasService.prototype.initArea = function (areaName) {
+            JasperAreasService.prototype.initArea = function (areaName, cb) {
                 if (!this.config) {
                     // resolve unregistred areas (bootstrapped)
-                    return this.q.when(true);
+                    return cb();
                 }
                 var area = this.ensureArea(areaName);
                 if (!area.scripts || !area.scripts.length) {
-                    // no scripts specified for area (may be bootstraped - allready loaded with _base.min.js)
-                    return this.q.when(true);
+                    return cb();
                 }
-                return this.loadiingAreas.addInitializer(areaName);
+                return this.loadiingAreas.addInitializer(areaName).then(function () {
+                    return cb();
+                });
             };
             JasperAreasService.prototype.loadAreas = function (areas, hops) {
                 var _this = this;
