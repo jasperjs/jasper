@@ -119,11 +119,12 @@ var jasper;
                     }
                     var angularBinding = '=?'; // default attribute binding
                     var type = attr.type || 'data';
-                    switch (type.toUpperCase()) {
-                        case 'EXPR':
+                    switch (type) {
+                        case 'expr':
+                        case 'event':
                             angularBinding = '&';
                             break;
-                        case 'TEXT':
+                        case 'text':
                             angularBinding = '@';
                             break;
                     }
@@ -193,6 +194,7 @@ var jasper;
                                 });
                                 break;
                             case 'expr':
+                            case 'event':
                                 // Don't assign Object.prototype method to scope
                                 if (!attrs.hasOwnProperty(attrName)) {
                                     _this[ctrlProppertyName] = angular.noop;
