@@ -54,6 +54,36 @@ var jasper;
                 }
                 return tagName.replace(/\-(\w)/g, function (match, letter) { return letter.toUpperCase(); });
             };
+            UtilityService.prototype.fetchAttributeBindings = function (properties, events) {
+                var attributes = [];
+                if (properties) {
+                    for (var prop in properties) {
+                        if (!properties.hasOwnProperty(prop))
+                            continue;
+                        var ctrlPropertyName = properties[prop];
+                        var t = 'text';
+                        if (ctrlPropertyName.indexOf('=') === 0) {
+                            t = 'data';
+                            ctrlPropertyName = ctrlPropertyName.slice(1, ctrlPropertyName.length);
+                        }
+                        attributes.push({
+                            name: prop,
+                            ctrlName: ctrlPropertyName,
+                            type: t
+                        });
+                    }
+                }
+                if (events) {
+                    events.forEach(function (evt) {
+                        attributes.push({
+                            name: evt,
+                            ctrlName: evt,
+                            type: 'event'
+                        });
+                    });
+                }
+                return attributes;
+            };
             UtilityService.prototype.getter = function (obj, path) {
                 var keys = path.split('.');
                 var key, len = keys.length;
@@ -89,10 +119,10 @@ var jasper;
                             pre: function (scope, element, attrs, controllers) {
                                 var ctrls = _this.utility.getComponentControllers(controllers, ddo);
                                 if (ctrls.main.initializeComponent && angular.isFunction(ctrls.main.initializeComponent))
-                                    ctrls.main.initializeComponent();
+                                    ctrls.main.initializeComponent.call(ctrls.main);
                                 if (ctrls.main.destroyComponent && angular.isFunction(ctrls.main.destroyComponent)) {
                                     scope.$on('$destroy', function () {
-                                        ctrls.main.destroyComponent();
+                                        ctrls.main.destroyComponent.call(ctrls.main);
                                         ctrls.main.$$scope = null;
                                     });
                                 }
@@ -199,13 +229,14 @@ var jasper;
                                     _this[ctrlProppertyName] = angular.noop;
                                     break;
                                 }
-                                var parentGet = $parse(attrs[attrName]);
-                                // Don't assign noop to destination if expression is not valid
-                                if (parentGet === angular.noop) {
-                                    _this[ctrlProppertyName] = angular.noop;
-                                    break;
-                                }
+                                var parentGet = null;
                                 _this[ctrlProppertyName] = function (locals) {
+                                    if (!parentGet) {
+                                        parentGet = $parse(attrs[attrName]);
+                                    }
+                                    if (parentGet === angular.noop) {
+                                        return;
+                                    }
                                     return parentGet(parentScope, locals);
                                 };
                                 break;
@@ -1022,7 +1053,7 @@ var jasper;
 /// <reference path="core/components/HtmlComponentRegistrar.ts" />
 /// <reference path="core/components/IComponentProvider.ts" />
 /// <reference path="core/components/IHtmlComponent.ts" />
-/// <reference path="core/components/IAttributeBinding.ts" />
+/// <reference path="core/IAttributeBinding.ts" />
 /// <reference path="core/components/IHtmlComponentDefinition.ts" />
 /// <reference path="core/decorators/DecoratorComponentProvider.ts" />
 /// <reference path="core/decorators/HtmlDecoratorRegistrar.ts" />

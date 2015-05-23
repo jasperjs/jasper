@@ -35,6 +35,13 @@ declare module jasper.core {
          * @param source - value to convert
          */
         camelCaseTagName(source: string): string;
+        /**
+         * Create IAttributeBinding[] from properties definition object and events
+         * @param properties        represent an angular2 properties binding definition. To create '=' binding use '=' before ctrl property name
+         *
+         * @param events            array of string. Represent events of the component: ['statusChanged']
+         */
+        fetchAttributeBindings(properties?: any, events?: string[]): IAttributeBinding[];
     }
     class UtilityService implements IUtilityService {
         getComponentControllers(controllers: any, directive: ng.IDirective): IComponentControllers;
@@ -42,6 +49,7 @@ declare module jasper.core {
         snakeCase(source: string): string;
         camelCase(source: string): string;
         camelCaseTagName(tagName: string): string;
+        fetchAttributeBindings(properties?: any, events?: string[]): IAttributeBinding[];
         private getter(obj, path);
     }
 }
@@ -114,6 +122,9 @@ declare module jasper {
     }
 }
 declare module jasper.core {
+    /**
+     * Represent component's attribute binding
+     */
     interface IAttributeBinding {
         /**
          * Represents attribute name, in 'snake-case' format

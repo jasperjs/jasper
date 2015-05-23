@@ -25,6 +25,14 @@
          * @param source - value to convert
          */
         camelCaseTagName(source:string): string;
+
+        /**
+         * Create IAttributeBinding[] from properties definition object and events
+         * @param properties        represent an angular2 properties binding definition. To create '=' binding use '=' before ctrl property name
+         *
+         * @param events            array of string. Represent events of the component: ['statusChanged']
+         */
+        fetchAttributeBindings(properties?:any, events?:string[]):IAttributeBinding[];
     }
 
     export class UtilityService implements IUtilityService {
@@ -53,7 +61,7 @@
         getFactoryOf(component:any):Function {
             if (angular.isString(component)) {
                 var result = this.getter(window, component);
-                if(!result) {
+                if (!result) {
                     throw 'Constructor defined as \"' + component + '\" not found';
                 }
                 return result;
@@ -82,7 +90,39 @@
             return tagName.replace(/\-(\w)/g, (match, letter) => letter.toUpperCase());
         }
 
-        private getter(obj: any, path: string): any {
+        fetchAttributeBindings(properties?:any, events?:string[]):IAttributeBinding[] {
+            var attributes:IAttributeBinding[] = [];
+            if (properties) {
+                for (var prop in properties) {
+                    if (!properties.hasOwnProperty(prop))
+                        continue;
+
+                    var ctrlPropertyName = properties[prop];
+                    var t = 'text';
+                    if (ctrlPropertyName.indexOf('=') === 0) {
+                        t = 'data';
+                        ctrlPropertyName = ctrlPropertyName.slice(1, ctrlPropertyName.length);
+                    }
+                    attributes.push({
+                        name: prop,
+                        ctrlName: ctrlPropertyName,
+                        type: t
+                    });
+                }
+            }
+            if (events) {
+                events.forEach(evt=> {
+                    attributes.push({
+                        name: evt,
+                        ctrlName: evt,
+                        type: 'event'
+                    });
+                });
+            }
+            return attributes;
+        }
+
+        private getter(obj:any, path:string):any {
             var keys = path.split('.');
             var key, len = keys.length;
 

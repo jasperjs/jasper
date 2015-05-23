@@ -20,11 +20,11 @@
                             var ctrls = this.utility.getComponentControllers(controllers, ddo);
 
                             if (ctrls.main.initializeComponent && angular.isFunction(ctrls.main.initializeComponent))
-                                ctrls.main.initializeComponent();
+                                ctrls.main.initializeComponent.call(ctrls.main);
 
                             if (ctrls.main.destroyComponent && angular.isFunction(ctrls.main.destroyComponent)) {
                                 scope.$on('$destroy', () => {
-                                    ctrls.main.destroyComponent();
+                                    ctrls.main.destroyComponent.call(ctrls.main);
                                     ctrls.main.$$scope = null;
                                 });
                             }
@@ -111,7 +111,6 @@
             }
         }
 
-
     }
 
     function JasperComponentWrapperFactory(ctor:any, attributes:IAttributeBinding[], utility:IUtilityService) {
@@ -142,15 +141,16 @@
                                 break;
                             }
 
-                            var parentGet = $parse(attrs[attrName]);
-
-                            // Don't assign noop to destination if expression is not valid
-                            if (parentGet === angular.noop) {
-                                this[ctrlProppertyName] = angular.noop;
-                                break;
-                            }
+                            var parentGet = null;
 
                             this[ctrlProppertyName] = function (locals) {
+                                if(!parentGet)
+                                {
+                                    parentGet = $parse(attrs[attrName])
+                                }
+                                if (parentGet === angular.noop) {
+                                    return;
+                                }
                                 return parentGet(parentScope, locals);
                             };
                             break;

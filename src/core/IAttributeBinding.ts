@@ -1,4 +1,7 @@
 module jasper.core{
+    /**
+     * Represent component's attribute binding
+     */
     export interface IAttributeBinding {
         /**
          * Represents attribute name, in 'snake-case' format
