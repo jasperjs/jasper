@@ -189,8 +189,7 @@ var jasper;
                                     break;
                                 _this[ctrlProppertyName] = attrs[attrName];
                                 attrs.$observe(attrName, function (val, oldVal) {
-                                    _this[ctrlProppertyName] = val;
-                                    triggerChangeEvent(_this, ctrlProppertyName, val, oldVal);
+                                    changeCtrlProperty(_this, ctrlProppertyName, val, oldVal);
                                 });
                                 break;
                             case 'expr':
@@ -216,8 +215,7 @@ var jasper;
                                 var attrValue = parentScope.$eval(attrs[attrName]);
                                 _this[ctrlProppertyName] = attrValue;
                                 parentScope.$watch(attrs[attrName], function (val, oldVal) {
-                                    _this[ctrlProppertyName] = val;
-                                    triggerChangeEvent(_this, ctrlProppertyName, val, oldVal);
+                                    changeCtrlProperty(_this, ctrlProppertyName, val, oldVal);
                                 });
                                 break;
                         }
@@ -230,9 +228,10 @@ var jasper;
             wrapper.$inject = wrapperInject;
             return wrapper;
         }
-        function triggerChangeEvent(ctrl, propertyName, newValue, oldValue) {
+        function changeCtrlProperty(ctrl, propertyName, newValue, oldValue) {
             if (newValue === oldValue)
                 return; // do not pass property id it does not change
+            ctrl[propertyName] = newValue;
             var methodName = propertyName + '_change';
             if (ctrl[methodName] && angular.isFunction(ctrl[methodName])) {
                 ctrl[methodName].call(ctrl, newValue, oldValue);

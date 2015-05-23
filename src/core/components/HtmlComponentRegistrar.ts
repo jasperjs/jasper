@@ -131,8 +131,7 @@
                             if (!attrs.hasOwnProperty(attrName)) break;
                             this[ctrlProppertyName] = attrs[attrName];
                             attrs.$observe(attrName, (val, oldVal)=> {
-                                this[ctrlProppertyName] = val;
-                                triggerChangeEvent(this, ctrlProppertyName, val, oldVal);
+                                changeCtrlProperty(this, ctrlProppertyName, val, oldVal);
                             });
                             break;
                         case 'expr':
@@ -161,8 +160,7 @@
                             var attrValue = parentScope.$eval(attrs[attrName]);
                             this[ctrlProppertyName] = attrValue;
                             parentScope.$watch(attrs[attrName], (val, oldVal) => {
-                                this[ctrlProppertyName] = val;
-                                triggerChangeEvent(this, ctrlProppertyName, val, oldVal);
+                                changeCtrlProperty(this, ctrlProppertyName, val, oldVal);
                             });
                             break;
                     }
@@ -176,9 +174,10 @@
         return wrapper;
     }
 
-    function triggerChangeEvent(ctrl:any, propertyName:string, newValue:any, oldValue:any) {
+    function changeCtrlProperty(ctrl:any, propertyName:string, newValue:any, oldValue:any) {
         if (newValue === oldValue)
             return; // do not pass property id it does not change
+        ctrl[propertyName] = newValue;
         var methodName = propertyName + '_change';
         if (ctrl[methodName] && angular.isFunction(ctrl[methodName])) {
             ctrl[methodName].call(ctrl, newValue, oldValue);
