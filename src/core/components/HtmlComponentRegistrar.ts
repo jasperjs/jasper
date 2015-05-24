@@ -19,10 +19,10 @@
                         pre: (scope:ng.IScope, element:any, attrs:ng.IAttributes, controllers:any) => {
                             var ctrls = this.utility.getComponentControllers(controllers, ddo);
 
-                            if (ctrls.main.initializeComponent && angular.isFunction(ctrls.main.initializeComponent))
+                            if (ctrls.main.initializeComponent)
                                 ctrls.main.initializeComponent.call(ctrls.main);
 
-                            if (ctrls.main.destroyComponent && angular.isFunction(ctrls.main.destroyComponent)) {
+                            if (ctrls.main.destroyComponent) {
                                 scope.$on('$destroy', () => {
                                     ctrls.main.destroyComponent.call(ctrls.main);
                                     ctrls.main.$$scope = null;
@@ -80,8 +80,8 @@
                 var ctor = this.utility.getFactoryOf(ctrl);
                 directive.controller = JasperComponentWrapperFactory(ctor, def.attributes, this.utility);
                 directive.controllerAs = 'vm';
-                directive.scope= {};
-            }else{
+                directive.scope = {};
+            } else {
                 directive.scope = this.getScopeDefinition(def);
             }
 
@@ -113,25 +113,31 @@
 
     }
 
-    function JasperComponentWrapperFactory(ctor:any, attributes:IAttributeBinding[], utility:IUtilityService) {
-        var additionalInjectables = ['$scope', '$attrs', '$parse'];
+    function JasperComponentWrapperFactory(ctor:any, bindings:IAttributeBinding[], utility:IUtilityService) {
+        var additionalInjectables = ['$scope', '$attrs', '$parse', '$interpolate'];
         // add some injectables to the component
         var wrapperInject = additionalInjectables.concat(ctor.$inject || []);
-        var wrapper = function JasperCompnentWrapper(scope:ng.IScope, attrs:any, $parse:ng.IParseService) {
+        var attributes = camelCaseBindings(bindings, utility);
+        var wrapper = function JasperCompnentWrapper(scope:ng.IScope, attrs:any, $parse:ng.IParseService, $interpolate:ng.IInterpolateService) {
             this.$$scope = scope;
-
             var parentScope = scope.$parent;
             if (attributes) {
-                attributes.forEach(attrBinding=> {
-                    var attrName = utility.camelCaseTagName(attrBinding.name);
+                var onNewScopeDestroyed = [];
+                for (var i = 0; i < attributes.length; i++) {
+                    var attrBinding = attributes[i];
+
+                }
+                attributes.forEach(attrBinding => {
+                    var attrName = attrBinding.name;
                     var ctrlProppertyName = attrBinding.ctrlName || attrName;
                     switch (attrBinding.type) {
                         case 'text':
                             if (!attrs.hasOwnProperty(attrName)) break;
-                            this[ctrlProppertyName] = attrs[attrName];
-                            attrs.$observe(attrName, (val, oldVal)=> {
+                            this[ctrlProppertyName] = $interpolate(attrs[attrName])(parentScope);
+                            var unbind = attrs.$observe(attrName, (val, oldVal)=> {
                                 changeCtrlProperty(this, ctrlProppertyName, val, oldVal);
                             });
+                            onNewScopeDestroyed.push(unbind);
                             break;
                         case 'expr':
                         case 'event':
@@ -144,8 +150,7 @@
                             var parentGet = null;
 
                             this[ctrlProppertyName] = function (locals) {
-                                if(!parentGet)
-                                {
+                                if (!parentGet) {
                                     parentGet = $parse(attrs[attrName])
                                 }
                                 if (parentGet === angular.noop) {
@@ -159,12 +164,22 @@
 
                             var attrValue = parentScope.$eval(attrs[attrName]);
                             this[ctrlProppertyName] = attrValue;
-                            parentScope.$watch(attrs[attrName], (val, oldVal) => {
+                            var unwatch = parentScope.$watch(attrs[attrName], (val, oldVal) => {
                                 changeCtrlProperty(this, ctrlProppertyName, val, oldVal);
                             });
+                            onNewScopeDestroyed.push(unwatch);
                             break;
                     }
                 });
+                if (onNewScopeDestroyed.length) {
+                    var unbindWatchers = function () {
+                        for (var i = 0; i < onNewScopeDestroyed.length; i++) {
+                            onNewScopeDestroyed[i]();
+                        }
+                        onNewScopeDestroyed = null;
+                    }
+                    scope.$on('$destroy', unbindWatchers);
+                }
             }
             ctor.apply(this, Array.prototype.slice.call(arguments, additionalInjectables.length, arguments.length));
             return this;
@@ -174,12 +189,26 @@
         return wrapper;
     }
 
+    function camelCaseBindings(bindings:IAttributeBinding[], utility:IUtilityService) {
+        if (!bindings)
+            return undefined;
+        var result = [];
+        for (var i = 0; i < bindings.length; i++) {
+            result.push({
+                name: utility.camelCaseTagName(bindings[i].name),
+                ctrlName: bindings[i].ctrlName,
+                type: bindings[i].type
+            })
+        }
+        return result;
+    }
+
     function changeCtrlProperty(ctrl:any, propertyName:string, newValue:any, oldValue:any) {
         if (newValue === oldValue)
             return; // do not pass property id it does not change
         ctrl[propertyName] = newValue;
         var methodName = propertyName + '_change';
-        if (ctrl[methodName] && angular.isFunction(ctrl[methodName])) {
+        if (ctrl[methodName]) {
             ctrl[methodName].call(ctrl, newValue, oldValue);
         }
     }

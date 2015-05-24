@@ -118,9 +118,9 @@ var jasper;
                         return {
                             pre: function (scope, element, attrs, controllers) {
                                 var ctrls = _this.utility.getComponentControllers(controllers, ddo);
-                                if (ctrls.main.initializeComponent && angular.isFunction(ctrls.main.initializeComponent))
+                                if (ctrls.main.initializeComponent)
                                     ctrls.main.initializeComponent.call(ctrls.main);
-                                if (ctrls.main.destroyComponent && angular.isFunction(ctrls.main.destroyComponent)) {
+                                if (ctrls.main.destroyComponent) {
                                     scope.$on('$destroy', function () {
                                         ctrls.main.destroyComponent.call(ctrls.main);
                                         ctrls.main.$$scope = null;
@@ -201,26 +201,32 @@ var jasper;
             return HtmlComponentRegistrar;
         })();
         core.HtmlComponentRegistrar = HtmlComponentRegistrar;
-        function JasperComponentWrapperFactory(ctor, attributes, utility) {
-            var additionalInjectables = ['$scope', '$attrs', '$parse'];
+        function JasperComponentWrapperFactory(ctor, bindings, utility) {
+            var additionalInjectables = ['$scope', '$attrs', '$parse', '$interpolate'];
             // add some injectables to the component
             var wrapperInject = additionalInjectables.concat(ctor.$inject || []);
-            var wrapper = function JasperCompnentWrapper(scope, attrs, $parse) {
+            var attributes = camelCaseBindings(bindings, utility);
+            var wrapper = function JasperCompnentWrapper(scope, attrs, $parse, $interpolate) {
                 var _this = this;
                 this.$$scope = scope;
                 var parentScope = scope.$parent;
                 if (attributes) {
+                    var onNewScopeDestroyed = [];
+                    for (var i = 0; i < attributes.length; i++) {
+                        var attrBinding = attributes[i];
+                    }
                     attributes.forEach(function (attrBinding) {
-                        var attrName = utility.camelCaseTagName(attrBinding.name);
+                        var attrName = attrBinding.name;
                         var ctrlProppertyName = attrBinding.ctrlName || attrName;
                         switch (attrBinding.type) {
                             case 'text':
                                 if (!attrs.hasOwnProperty(attrName))
                                     break;
-                                _this[ctrlProppertyName] = attrs[attrName];
-                                attrs.$observe(attrName, function (val, oldVal) {
+                                _this[ctrlProppertyName] = $interpolate(attrs[attrName])(parentScope);
+                                var unbind = attrs.$observe(attrName, function (val, oldVal) {
                                     changeCtrlProperty(_this, ctrlProppertyName, val, oldVal);
                                 });
+                                onNewScopeDestroyed.push(unbind);
                                 break;
                             case 'expr':
                             case 'event':
@@ -245,12 +251,22 @@ var jasper;
                                     break;
                                 var attrValue = parentScope.$eval(attrs[attrName]);
                                 _this[ctrlProppertyName] = attrValue;
-                                parentScope.$watch(attrs[attrName], function (val, oldVal) {
+                                var unwatch = parentScope.$watch(attrs[attrName], function (val, oldVal) {
                                     changeCtrlProperty(_this, ctrlProppertyName, val, oldVal);
                                 });
+                                onNewScopeDestroyed.push(unwatch);
                                 break;
                         }
                     });
+                    if (onNewScopeDestroyed.length) {
+                        var unbindWatchers = function () {
+                            for (var i = 0; i < onNewScopeDestroyed.length; i++) {
+                                onNewScopeDestroyed[i]();
+                            }
+                            onNewScopeDestroyed = null;
+                        };
+                        scope.$on('$destroy', unbindWatchers);
+                    }
                 }
                 ctor.apply(this, Array.prototype.slice.call(arguments, additionalInjectables.length, arguments.length));
                 return this;
@@ -259,12 +275,25 @@ var jasper;
             wrapper.$inject = wrapperInject;
             return wrapper;
         }
+        function camelCaseBindings(bindings, utility) {
+            if (!bindings)
+                return undefined;
+            var result = [];
+            for (var i = 0; i < bindings.length; i++) {
+                result.push({
+                    name: utility.camelCaseTagName(bindings[i].name),
+                    ctrlName: bindings[i].ctrlName,
+                    type: bindings[i].type
+                });
+            }
+            return result;
+        }
         function changeCtrlProperty(ctrl, propertyName, newValue, oldValue) {
             if (newValue === oldValue)
                 return; // do not pass property id it does not change
             ctrl[propertyName] = newValue;
             var methodName = propertyName + '_change';
-            if (ctrl[methodName] && angular.isFunction(ctrl[methodName])) {
+            if (ctrl[methodName]) {
                 ctrl[methodName].call(ctrl, newValue, oldValue);
             }
         }
