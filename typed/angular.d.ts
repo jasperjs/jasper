@@ -1329,6 +1329,7 @@ declare module ng {
         terminal?: boolean;
         transclude?: any;
         bindToController?: any;
+        templateNamespace?: string;
     }
 
     /**
