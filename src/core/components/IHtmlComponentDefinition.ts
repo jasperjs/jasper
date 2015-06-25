@@ -13,6 +13,7 @@
         transclude?: any;
 
         /**
+         * (LEGACY)
          * Attributes to bind to the component. string|array
          * Each attribute can be on of three types:
          *      'data' (angular '=' binding), 'expr' ('&') and 'text' ('@')
@@ -23,6 +24,31 @@
          * - attributes: [ { name: 'one-attribute', type: 'data' }, { name: 'on-updated', type: 'expr'} ]
          */
         attributes?: IAttributeBinding[];
+
+        /**
+         * Properties it's a new way to define external component properties.
+         *
+         * Example: ['color', 'caption']
+         *
+         * You can use it in two ways:
+         *
+         * <component color="some text" bind-caption="someExpression"></component>
+         *
+         * If an attribute has 'bind-' prefix - it will bound to component's field as the result of passed expression.
+         * If you use attribute name - it will bound as text.
+         *
+         */
+        properties?: string[];
+        /**
+         * Events it's a new way to define component's events.
+         *
+         * Example: ['click', 'change']
+         *
+         * You can use with component with 'on-' prefix with attribute
+         *
+         * <component on-click="someMethod()" on-change="someMethod()"></component>
+         */
+        events?: string[];
 
         /**
          * Setup template url address of the component

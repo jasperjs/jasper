@@ -78,7 +78,7 @@
             var ctrl = def.ctrl || def.ctor;
             if (ctrl) {
                 var ctor = this.utility.getFactoryOf(ctrl);
-                directive.controller = JasperComponentWrapperFactory(ctor, def.attributes, this.utility);
+                directive.controller = JasperComponentWrapperFactory(ctor, this.extractAttributeBindings(def), this.utility);
                 directive.controllerAs = 'vm';
                 directive.scope = {};
             } else {
@@ -95,6 +95,43 @@
             directive.require = this.getRequirementsForComponent(def);
 
             return directive;
+        }
+
+        private extractAttributeBindings(def:IHtmlComponentDefinition):IAttributeBinding[] {
+            if (def.properties || def.events) {
+                var result:IAttributeBinding[] = [];
+                // create properties bindings:
+                if (def.properties) {
+                    for (var i = 0; i < def.properties.length; i++) {
+                        var propertyName = def.properties[i];
+                        result.push({
+                            name: propertyName,
+                            ctrlName: propertyName,
+                            type: 'text'
+                        });
+                        // register another binding with 'bind-' prefix
+                        result.push({
+                            name: 'bind-' + propertyName,
+                            ctrlName: propertyName,
+                            type: 'data'
+                        });
+                    }
+                }
+                if (def.events) {
+                    for (var i = 0; i < def.events.length; i++) {
+                        var eventName = def.events[i];
+                        result.push({
+                            name: 'on-' + eventName,
+                            ctrlName: eventName,
+                            type: 'expr',
+                            // indicates that we need to create EventEmitter class to component's property
+                            $$eventEmitter: true
+                        });
+                    }
+                }
+            } else {
+                return def.attributes || [];
+            }
         }
 
         private getRequirementsForComponent(component:IHtmlComponentDefinition) {
@@ -118,15 +155,11 @@
         // add some injectables to the component
         var wrapperInject = additionalInjectables.concat(ctor.$inject || []);
         var attributes = camelCaseBindings(bindings, utility);
-        var wrapper = function JasperCompnentWrapper(scope:ng.IScope, attrs:any, $parse:ng.IParseService, $interpolate:ng.IInterpolateService) {
+        var wrapper = function JasperComponentWrapper(scope:ng.IScope, attrs:any, $parse:ng.IParseService, $interpolate:ng.IInterpolateService) {
             this.$$scope = scope;
             var parentScope = scope.$parent;
-            if (attributes) {
+            if (attributes.length) {
                 var onNewScopeDestroyed = [];
-                for (var i = 0; i < attributes.length; i++) {
-                    var attrBinding = attributes[i];
-
-                }
                 attributes.forEach(attrBinding => {
                     var attrName = attrBinding.name;
                     var ctrlProppertyName = attrBinding.ctrlName || attrName;
@@ -134,7 +167,7 @@
                         case 'text':
                             if (!attrs.hasOwnProperty(attrName)) break;
                             this[ctrlProppertyName] = $interpolate(attrs[attrName])(parentScope);
-                            var unbind = attrs.$observe(attrName, (val, oldVal)=> {
+                            var unbind = attrs.$observe(attrName, (val, oldVal) => {
                                 changeCtrlProperty(this, ctrlProppertyName, val, oldVal);
                             });
                             onNewScopeDestroyed.push(unbind);
@@ -190,8 +223,8 @@
     }
 
     function camelCaseBindings(bindings:IAttributeBinding[], utility:IUtilityService) {
-        if (!bindings)
-            return undefined;
+        if (!bindings.length)
+            return bindings;
         var result = [];
         for (var i = 0; i < bindings.length; i++) {
             result.push({
