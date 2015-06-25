@@ -30,8 +30,9 @@
 /// <reference path="core/constants/ConstantProvider.ts" />
 
 /// <reference path="core/GlobalEvents.ts" />
+/// <reference path="core/EventEmitter.ts" />
 /// <reference path="core/JasperComponent.ts" />
-
+/// <reference path="core/JasperDirectiveWrapperFactory.ts" />
 /// <reference path="core/module.ts" />
 
 // AREAS

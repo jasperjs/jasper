@@ -17,5 +17,11 @@ module jasper.core{
          * Represents attribute type: 'data'|'expr'|'text'
          */
         type?: string;
+
+
+        /**
+         * Bind EventEmitter instead of Function to component's controller
+         */
+        $$eventEmitter?: boolean;
     }
 }

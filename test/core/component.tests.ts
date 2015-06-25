@@ -1,4 +1,5 @@
-﻿describe('Jasper component', () => {
+﻿///<reference path="../mocks.ts" />
+describe('Jasper component', () => {
 
     var registrar: jasper.core.HtmlComponentRegistrar, compileProvider: jasper.mocks.TestCompileProvider;
 
@@ -26,7 +27,7 @@
         compileProvider = new jasper.mocks.TestCompileProvider();
     });
 
-    it('Test correct restrict for html component registration', () => {
+    it('should correct restrict for html component registration', () => {
         var definition: jasper.core.IHtmlComponentDefinition = {
             name: 'myElement'
         }
@@ -35,7 +36,7 @@
         expect(ddo.restrict).toEqual('E');
     });
 
-    it('Test template for html component registration', () => {
+    it('should template for html component registration', () => {
         var definition: jasper.core.IHtmlComponentDefinition = {
             name: 'myElement',
             template: '<p>test</p>'
@@ -46,7 +47,7 @@
         expect(ddo.templateUrl).toBeUndefined();
     });
 
-    it('Test templateUrl for html component registration', () => {
+    it('should templateUrl for html component registration', () => {
         var definition: jasper.core.IHtmlComponentDefinition = {
             name: 'myElement',
             templateUrl: 'path/to/my/template.html'
@@ -57,7 +58,7 @@
         expect(ddo.template).toBeUndefined();
     });
 
-    it('Test transclude for html component registration', () => {
+    it('should transclude for html component registration', () => {
         var definition: jasper.core.IHtmlComponentDefinition = {
             name: 'myElement',
             transclude: 'true'
@@ -71,7 +72,7 @@
     });
 
 
-    it('Test transclude for html component registration', () => {
+    it('should transclude for html component registration', () => {
         var definition: jasper.core.IHtmlComponentDefinition = {
             name: 'myElement',
             transclude: 'true'
@@ -85,7 +86,7 @@
     });
 
 
-    it('Test template compilation', inject(($compile, $rootScope) => {
+    it('should template compilation', inject(($compile, $rootScope) => {
         var definition: jasper.core.IHtmlComponentDefinition = {
             name: 'someTag',
             template: '<p>hello</p>'
@@ -117,7 +118,7 @@
         expect(attrValue).toEqual('test');
     }));
 
-    it('Test component $$scope assign', inject(($compile, $rootScope) => {
+    it('should component $$scope assign', inject(($compile, $rootScope) => {
 
         var componentScope: ng.IScope;
         // test component
@@ -139,7 +140,7 @@
     }));
 
 
-    it('Test component text attributes binding', inject(($compile, $rootScope) => {
+    it('should component text attributes binding', inject(($compile, $rootScope) => {
         var attrValue;
         // test component
         var component = function() {
@@ -167,7 +168,7 @@
         var attrValue;
         // test component
         var component = function() {
-            attrValue = this.someExpr;
+            attrValue = this['someExpr'];
         };
         var definition: jasper.core.IHtmlComponentDefinition = {
             name: 'someTag',
@@ -209,7 +210,7 @@
         expect(destroyInvoked).toBe(true);
     }));
 
-    it('Test that undefined attribute do not pass to the component', inject(($compile, $rootScope) => {
+    it('should that undefined attribute do not pass to the component', inject(($compile, $rootScope) => {
         // test component
         var invoked  = false;
         var component = function() {
@@ -234,7 +235,7 @@
         expect(invoked).toBe(false);
     }));
 
-    it('Test that on change method invoked when property changed', inject(($compile, $rootScope) => {
+    it('should that on change method invoked when property changed', inject(($compile, $rootScope) => {
         // test component
         var invoked  = false, newValue, oldValue;
         var component = function() {
@@ -268,6 +269,90 @@
         expect(invoked).toBe(true);
         expect(newValue).toEqual('test 2');
         expect(oldValue).toEqual('test');
+    }));
+
+    fit('should create bindings for properties', inject(($compile, $rootScope) => {
+
+        var instance;
+        var component = function() { instance = this; };
+
+        var definition: jasper.core.IHtmlComponentDefinition = {
+            name: 'myComponent',
+            ctrl: component,
+            properties:['myColor','otherColor'],
+            events: ['click'],
+            template: '<p>hello {{vm.myColor}}</p>'
+        };
+        registerDefinitionObject(definition);
+        var scope = $rootScope.$new();
+        scope.property = 'otherColorTest';
+        $compile('<my-component my-color="test" on-click="someMethod()" bind-other-color="property"></my-component>')(scope);
+
+        expect(instance.myColor).toEqual('test');
+        expect(instance.otherColor).toEqual(scope.property);
+
+        expect(instance.click).toBeDefined(); //
+        expect(instance.click instanceof jasper.core.EventEmitter).toBeTruthy();
+    }));
+
+    it('should ignore attributes property if properties or events specified', inject(($compile, $rootScope) => {
+
+        var instance;
+        // test component
+        var component = function() { instance = this; };
+
+        var definition: jasper.core.IHtmlComponentDefinition = {
+            name: 'myComponent',
+            ctrl: component,
+            events:['click'],
+            attributes:[{name: 'some-attr'}],
+            template: '<p>hello {{vm.myColor}}</p>'
+        };
+        registerDefinitionObject(definition);
+        var scope = $rootScope.$new();
+        scope.property = 'otherColorTest';
+        $compile('<my-component on-click="someMethod()" some-attr="\'test\'"></my-component>')(scope);
+
+        expect(instance.someAttr).toBeUndefined();
+    }));
+
+
+    it('should does not propagate changes from child components to parent (one-way binding)', inject(($compile, $rootScope) => {
+
+        var parentInstance, childInstance;
+        // test component
+        var parent = function() { parentInstance = this; this.value = 'blue'; };
+        var child = function() { childInstance = this; };
+
+
+        var parentDefinition: jasper.core.IHtmlComponentDefinition = {
+            name: 'parentCmp',
+            ctrl: parent,
+            template: '<child-cmp bind-color="vm.value"></child-cmp>'
+        };
+        registerDefinitionObject(parentDefinition);
+        var childDefinition: jasper.core.IHtmlComponentDefinition = {
+            name: 'childCmp',
+            properties: ['color'],
+            ctrl: child,
+            template: '<p>{{vm.color}}</p>'
+        };
+        registerDefinitionObject(childDefinition);
+
+        var scope = $rootScope.$new();
+        $compile('<parent-cmp></parent-cmp>')(scope);
+
+        expect(childInstance.color).toEqual(parentInstance.value);
+
+        childInstance.color = 'green';
+        scope.$digest();
+
+        expect(parentInstance.value).toEqual('blue');//not changed after child
+
+        parentInstance.value = 'red';
+        scope.$digest();
+
+        expect(childInstance.color).toEqual('red');//parent override value for child
     }));
 
 });

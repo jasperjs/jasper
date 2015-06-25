@@ -139,6 +139,10 @@ declare module jasper.core {
          * Represents attribute type: 'data'|'expr'|'text'
          */
         type?: string;
+        /**
+         * Bind EventEmitter instead of Function to component's controller
+         */
+        $$eventEmitter?: boolean;
     }
 }
 declare module jasper.core {
@@ -401,6 +405,20 @@ declare module jasper.core {
     }
 }
 declare module jasper.core {
+    interface IEventEmitter {
+        /**
+         * Fires event emitter
+         * @param eventArgs     arguments that will be allowed as '$event' variable in the expression
+         */
+        next(eventArgs: any): void;
+    }
+    class EventEmitter implements IEventEmitter {
+        private fn;
+        constructor(fn: Function);
+        next(eventArgs: any): void;
+    }
+}
+declare module jasper.core {
     class JasperComponent {
         private $$scope;
         protected $digest(): void;
@@ -418,6 +436,9 @@ declare module jasper.core {
         protected $evalAsync(expression?: (scope: ng.IScope) => any): void;
         private ensureScope();
     }
+}
+declare module jasper.core {
+    function JasperDirectiveWrapperFactory(ctor: any, bindings: IAttributeBinding[], utility: IUtilityService): (scope: ng.IScope, attrs: any, $parse: ng.IParseService, $interpolate: ng.IInterpolateService) => any;
 }
 declare module jasper.areas {
     class JasperAreaDirective {
