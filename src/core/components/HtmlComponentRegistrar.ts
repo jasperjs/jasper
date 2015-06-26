@@ -16,18 +16,15 @@
             if (ddo.controller) {
                 ddo.compile = () => {
                     return {
-                        pre: (scope:ng.IScope, element:any, attrs:ng.IAttributes, controllers:any, tranclude:any) => {
+                        pre: (scope:ng.IScope, element:any, attrs:ng.IAttributes, controllers:any) => {
                             var ctrls = this.utility.getComponentControllers(controllers, ddo);
-                            this.bindController(component, scope, ctrls.main, attrs);
 
-                            ctrls.main.$$scope = scope;
+                            if (ctrls.main.initializeComponent)
+                                ctrls.main.initializeComponent.call(ctrls.main);
 
-                            if (ctrls.main.initializeComponent && angular.isFunction(ctrls.main.initializeComponent))
-                                ctrls.main.initializeComponent();
-
-                            if (ctrls.main.destroyComponent && angular.isFunction(ctrls.main.destroyComponent)) {
+                            if (ctrls.main.destroyComponent) {
                                 scope.$on('$destroy', () => {
-                                    ctrls.main.destroyComponent();
+                                    ctrls.main.destroyComponent.call(ctrls.main);
                                     ctrls.main.$$scope = null;
                                 });
                             }
@@ -45,62 +42,47 @@
             this.directive(component.name, () => ddo);
         }
 
-        private bindController(def:IHtmlComponentDefinition, scope:ng.IScope, ctrl:IHtmlComponent, attrs) {
+        private getScopeDefinition(def:IHtmlComponentDefinition) {
+            var scope = {};
             if (!def.attributes)
-                return;
+                return scope;
 
             for (var i = 0; i < def.attributes.length; i++) {
-                var attrName = def.attributes[i].name;
-                var attrType = def.attributes[i].type || 'data';
-
-                var propertyName = this.utility.camelCaseTagName(attrName);
-
-                if (angular.isDefined(attrs[propertyName])) {
-
-                    switch (attrType.toUpperCase()) {
-                        case 'DATA':
-                            this.bindChangeMethod(propertyName, ctrl, scope);
-                            break;
-                        case 'EXPR':
-                            break;
-                        case 'TEXT':
-                            this.bindChangeMethod(propertyName, ctrl, scope);
-                            break;
-                        default:
-                            throw 'Unknown attribute type: ' + attrType
-                    }
-
+                var attr = def.attributes[i];
+                if (!attr.name) {
+                    throw 'Attribute name not specified of: ' + JSON.stringify(attr);
                 }
+
+                var angularBinding = '=?'; // default attribute binding
+                var type = attr.type || 'data';
+                switch (type) {
+                    case 'expr':
+                    case 'event':
+                        angularBinding = '&';
+                        break;
+                    case 'text':
+                        angularBinding = '@';
+                        break;
+                }
+                var camelCaseAttrName = this.utility.camelCaseTagName(attr.name);
+                scope[camelCaseAttrName] = angularBinding;
             }
-
-        }
-
-        private bindChangeMethod(attributeName:string
-            , ctrl:IHtmlComponent
-            , scope:ng.IScope) {
-
-            var methodName = attributeName + '_change';
-            if (ctrl[methodName] && angular.isFunction(ctrl[methodName])) {
-                scope.$watch(()=> ctrl[attributeName], (val, oldVal) => {
-                    if (val === oldVal)
-                        return; // do not pass property id it does not change
-                    ctrl[methodName](val, oldVal);
-                });
-            }
-
+            return scope;
         }
 
         private createDirectiveFor(def:IHtmlComponentDefinition):ng.IDirective {
             var directive:ng.IDirective = {
-                restrict: 'E',
-                scope: this.getScopeDefinition(def)
+                restrict: 'E'
             };
 
             var ctrl = def.ctrl || def.ctor;
             if (ctrl) {
-                directive.bindToController = true;
-                directive.controller = this.utility.getFactoryOf(ctrl);
+                var ctor = this.utility.getFactoryOf(ctrl);
+                directive.controller = JasperDirectiveWrapperFactory(ctor, this.extractAttributeBindings(def), this.utility);
                 directive.controllerAs = 'vm';
+                directive.scope = {};
+            } else {
+                directive.scope = this.getScopeDefinition(def);
             }
 
             directive.transclude = def.transclude === 'true' ? true : def.transclude;
@@ -115,31 +97,43 @@
             return directive;
         }
 
-        private getScopeDefinition(def:IHtmlComponentDefinition) {
-            var scope = {};
-            if (!def.attributes)
-                return scope;
-
-            for (var i = 0; i < def.attributes.length; i++) {
-                var attr = def.attributes[i];
-                if (!attr.name) {
-                    throw 'Attribute name not specified of: ' + JSON.stringify(attr);
+        private extractAttributeBindings(def:IHtmlComponentDefinition):IAttributeBinding[] {
+            if (def.properties || def.events) {
+                var result:IAttributeBinding[] = [];
+                // create properties bindings:
+                if (def.properties) {
+                    for (var i = 0; i < def.properties.length; i++) {
+                        var propertyName = def.properties[i];
+                        var ctrlName = this.utility.camelCaseTagName(propertyName);
+                        result.push({
+                            name: propertyName,
+                            ctrlName: ctrlName,
+                            type: 'text'
+                        });
+                        // register another binding with 'bind-' prefix
+                        result.push({
+                            name: 'bind-' + propertyName,
+                            ctrlName: ctrlName,
+                            type: 'data'
+                        });
+                    }
                 }
-
-                var angularBinding = '=?'; // default attribute binding
-                var type = attr.type || 'data';
-                switch (type.toUpperCase()) {
-                    case 'EXPR':
-                        angularBinding = '&';
-                        break;
-                    case 'TEXT':
-                        angularBinding = '@';
-                        break;
+                if (def.events) {
+                    for (var i = 0; i < def.events.length; i++) {
+                        var eventName = def.events[i];
+                        result.push({
+                            name: 'on-' + eventName,
+                            ctrlName: eventName,
+                            type: 'expr',
+                            // indicates that we need to create EventEmitter class to component's property
+                            $$eventEmitter: true
+                        });
+                    }
                 }
-                var camelCaseAttrName = this.utility.camelCaseTagName(attr.name);
-                scope[camelCaseAttrName] = angularBinding;
+                return result;
+            } else {
+                return def.attributes || [];
             }
-            return scope;
         }
 
         private getRequirementsForComponent(component:IHtmlComponentDefinition) {

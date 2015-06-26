@@ -35,6 +35,13 @@ declare module jasper.core {
          * @param source - value to convert
          */
         camelCaseTagName(source: string): string;
+        /**
+         * Create IAttributeBinding[] from properties definition object and events
+         * @param properties        represent an angular2 properties binding definition. To create '=' binding use '=' before ctrl property name
+         *
+         * @param events            array of string. Represent events of the component: ['statusChanged']
+         */
+        fetchAttributeBindings(properties?: any, events?: string[]): IAttributeBinding[];
     }
     class UtilityService implements IUtilityService {
         getComponentControllers(controllers: any, directive: ng.IDirective): IComponentControllers;
@@ -42,6 +49,7 @@ declare module jasper.core {
         snakeCase(source: string): string;
         camelCase(source: string): string;
         camelCaseTagName(tagName: string): string;
+        fetchAttributeBindings(properties?: any, events?: string[]): IAttributeBinding[];
         private getter(obj, path);
     }
 }
@@ -51,10 +59,9 @@ declare module jasper.core {
         private utility;
         constructor(compileProvider: ng.ICompileProvider);
         register(component: IHtmlComponentDefinition): void;
-        private bindController(def, scope, ctrl, attrs);
-        private bindChangeMethod(attributeName, ctrl, scope);
-        private createDirectiveFor(def);
         private getScopeDefinition(def);
+        private createDirectiveFor(def);
+        private extractAttributeBindings(def);
         private getRequirementsForComponent(component);
     }
 }
@@ -116,15 +123,26 @@ declare module jasper {
     }
 }
 declare module jasper.core {
+    /**
+     * Represent component's attribute binding
+     */
     interface IAttributeBinding {
         /**
          * Represents attribute name, in 'snake-case' format
          */
         name: string;
         /**
+         * Property name of controller to bind to. Default the same with name.
+         */
+        ctrlName?: string;
+        /**
          * Represents attribute type: 'data'|'expr'|'text'
          */
         type?: string;
+        /**
+         * Bind EventEmitter instead of Function to component's controller
+         */
+        $$eventEmitter?: boolean;
     }
 }
 declare module jasper.core {
@@ -140,6 +158,7 @@ declare module jasper.core {
          */
         transclude?: any;
         /**
+         * (LEGACY)
          * Attributes to bind to the component. string|array
          * Each attribute can be on of three types:
          *      'data' (angular '=' binding), 'expr' ('&') and 'text' ('@')
@@ -150,6 +169,30 @@ declare module jasper.core {
          * - attributes: [ { name: 'one-attribute', type: 'data' }, { name: 'on-updated', type: 'expr'} ]
          */
         attributes?: IAttributeBinding[];
+        /**
+         * Properties it's a new way to define external component properties.
+         *
+         * Example: ['color', 'caption']
+         *
+         * You can use it in two ways:
+         *
+         * <component color="some text" bind-caption="someExpression"></component>
+         *
+         * If an attribute has 'bind-' prefix - it will bound to component's field as the result of passed expression.
+         * If you use attribute name - it will bound as text.
+         *
+         */
+        properties?: string[];
+        /**
+         * Events it's a new way to define component's events.
+         *
+         * Example: ['click', 'change']
+         *
+         * You can use with component with 'on-' prefix with attribute
+         *
+         * <component on-click="someMethod()" on-change="someMethod()"></component>
+         */
+        events?: string[];
         /**
          * Setup template url address of the component
          */
@@ -362,6 +405,20 @@ declare module jasper.core {
     }
 }
 declare module jasper.core {
+    interface IEventEmitter {
+        /**
+         * Fires event emitter
+         * @param eventArgs     arguments that will be allowed as '$event' variable in the expression
+         */
+        next(eventArgs: any): void;
+    }
+    class EventEmitter implements IEventEmitter {
+        private fn;
+        constructor(fn: Function);
+        next(eventArgs: any): void;
+    }
+}
+declare module jasper.core {
     class JasperComponent {
         private $$scope;
         protected $digest(): void;
@@ -379,6 +436,9 @@ declare module jasper.core {
         protected $evalAsync(expression?: (scope: ng.IScope) => any): void;
         private ensureScope();
     }
+}
+declare module jasper.core {
+    function JasperDirectiveWrapperFactory(ctor: any, bindings: IAttributeBinding[], utility: IUtilityService): (scope: ng.IScope, attrs: any, $parse: ng.IParseService, $interpolate: ng.IInterpolateService) => any;
 }
 declare module jasper.areas {
     class JasperAreaDirective {
@@ -401,7 +461,7 @@ declare module jasper.areas {
         constructor($q: ng.IQService);
         configure(config: any): void;
         onAreaLoaded(areaName: string): ng.IPromise<any>;
-        initArea(areaName: string): ng.IPromise<any>;
+        initArea(areaName: string, cb: () => any): any;
         loadAreas(areas: string, hops?: number): ng.IPromise<any>;
         loadAreas(areas: string[], hops?: number): ng.IPromise<any>;
         /**

@@ -7,7 +7,7 @@
 /// <reference path="core/components/HtmlComponentRegistrar.ts" />
 /// <reference path="core/components/IComponentProvider.ts" />
 /// <reference path="core/components/IHtmlComponent.ts" />
-/// <reference path="core/components/IAttributeBinding.ts" />
+/// <reference path="core/IAttributeBinding.ts" />
 /// <reference path="core/components/IHtmlComponentDefinition.ts" />
 
 
@@ -30,8 +30,9 @@
 /// <reference path="core/constants/ConstantProvider.ts" />
 
 /// <reference path="core/GlobalEvents.ts" />
+/// <reference path="core/EventEmitter.ts" />
 /// <reference path="core/JasperComponent.ts" />
-
+/// <reference path="core/JasperDirectiveWrapperFactory.ts" />
 /// <reference path="core/module.ts" />
 
 // AREAS

@@ -54,6 +54,36 @@ var jasper;
                 }
                 return tagName.replace(/\-(\w)/g, function (match, letter) { return letter.toUpperCase(); });
             };
+            UtilityService.prototype.fetchAttributeBindings = function (properties, events) {
+                var attributes = [];
+                if (properties) {
+                    for (var prop in properties) {
+                        if (!properties.hasOwnProperty(prop))
+                            continue;
+                        var ctrlPropertyName = properties[prop];
+                        var t = 'text';
+                        if (ctrlPropertyName.indexOf('=') === 0) {
+                            t = 'data';
+                            ctrlPropertyName = ctrlPropertyName.slice(1, ctrlPropertyName.length);
+                        }
+                        attributes.push({
+                            name: prop,
+                            ctrlName: ctrlPropertyName,
+                            type: t
+                        });
+                    }
+                }
+                if (events) {
+                    events.forEach(function (evt) {
+                        attributes.push({
+                            name: evt,
+                            ctrlName: evt,
+                            type: 'event'
+                        });
+                    });
+                }
+                return attributes;
+            };
             UtilityService.prototype.getter = function (obj, path) {
                 var keys = path.split('.');
                 var key, len = keys.length;
@@ -86,15 +116,13 @@ var jasper;
                 if (ddo.controller) {
                     ddo.compile = function () {
                         return {
-                            pre: function (scope, element, attrs, controllers, tranclude) {
+                            pre: function (scope, element, attrs, controllers) {
                                 var ctrls = _this.utility.getComponentControllers(controllers, ddo);
-                                _this.bindController(component, scope, ctrls.main, attrs);
-                                ctrls.main.$$scope = scope;
-                                if (ctrls.main.initializeComponent && angular.isFunction(ctrls.main.initializeComponent))
-                                    ctrls.main.initializeComponent();
-                                if (ctrls.main.destroyComponent && angular.isFunction(ctrls.main.destroyComponent)) {
+                                if (ctrls.main.initializeComponent)
+                                    ctrls.main.initializeComponent.call(ctrls.main);
+                                if (ctrls.main.destroyComponent) {
                                     scope.$on('$destroy', function () {
-                                        ctrls.main.destroyComponent();
+                                        ctrls.main.destroyComponent.call(ctrls.main);
                                         ctrls.main.$$scope = null;
                                     });
                                 }
@@ -110,58 +138,6 @@ var jasper;
                 }
                 this.directive(component.name, function () { return ddo; });
             };
-            HtmlComponentRegistrar.prototype.bindController = function (def, scope, ctrl, attrs) {
-                if (!def.attributes)
-                    return;
-                for (var i = 0; i < def.attributes.length; i++) {
-                    var attrName = def.attributes[i].name;
-                    var attrType = def.attributes[i].type || 'data';
-                    var propertyName = this.utility.camelCaseTagName(attrName);
-                    if (angular.isDefined(attrs[propertyName])) {
-                        switch (attrType.toUpperCase()) {
-                            case 'DATA':
-                                this.bindChangeMethod(propertyName, ctrl, scope);
-                                break;
-                            case 'EXPR':
-                                break;
-                            case 'TEXT':
-                                this.bindChangeMethod(propertyName, ctrl, scope);
-                                break;
-                            default:
-                                throw 'Unknown attribute type: ' + attrType;
-                        }
-                    }
-                }
-            };
-            HtmlComponentRegistrar.prototype.bindChangeMethod = function (attributeName, ctrl, scope) {
-                var methodName = attributeName + '_change';
-                if (ctrl[methodName] && angular.isFunction(ctrl[methodName])) {
-                    scope.$watch(function () { return ctrl[attributeName]; }, function (val, oldVal) {
-                        if (val === oldVal)
-                            return; // do not pass property id it does not change
-                        ctrl[methodName](val, oldVal);
-                    });
-                }
-            };
-            HtmlComponentRegistrar.prototype.createDirectiveFor = function (def) {
-                var directive = {
-                    restrict: 'E',
-                    scope: this.getScopeDefinition(def)
-                };
-                var ctrl = def.ctrl || def.ctor;
-                if (ctrl) {
-                    directive.bindToController = true;
-                    directive.controller = this.utility.getFactoryOf(ctrl);
-                    directive.controllerAs = 'vm';
-                }
-                directive.transclude = def.transclude === 'true' ? true : def.transclude;
-                directive.templateUrl = def.templateUrl;
-                directive.replace = def.replace;
-                if (angular.isDefined(def.template))
-                    directive.template = def.template;
-                directive.require = this.getRequirementsForComponent(def);
-                return directive;
-            };
             HtmlComponentRegistrar.prototype.getScopeDefinition = function (def) {
                 var scope = {};
                 if (!def.attributes)
@@ -173,11 +149,12 @@ var jasper;
                     }
                     var angularBinding = '=?'; // default attribute binding
                     var type = attr.type || 'data';
-                    switch (type.toUpperCase()) {
-                        case 'EXPR':
+                    switch (type) {
+                        case 'expr':
+                        case 'event':
                             angularBinding = '&';
                             break;
-                        case 'TEXT':
+                        case 'text':
                             angularBinding = '@';
                             break;
                     }
@@ -185,6 +162,67 @@ var jasper;
                     scope[camelCaseAttrName] = angularBinding;
                 }
                 return scope;
+            };
+            HtmlComponentRegistrar.prototype.createDirectiveFor = function (def) {
+                var directive = {
+                    restrict: 'E'
+                };
+                var ctrl = def.ctrl || def.ctor;
+                if (ctrl) {
+                    var ctor = this.utility.getFactoryOf(ctrl);
+                    directive.controller = core.JasperDirectiveWrapperFactory(ctor, this.extractAttributeBindings(def), this.utility);
+                    directive.controllerAs = 'vm';
+                    directive.scope = {};
+                }
+                else {
+                    directive.scope = this.getScopeDefinition(def);
+                }
+                directive.transclude = def.transclude === 'true' ? true : def.transclude;
+                directive.templateUrl = def.templateUrl;
+                directive.replace = def.replace;
+                if (angular.isDefined(def.template))
+                    directive.template = def.template;
+                directive.require = this.getRequirementsForComponent(def);
+                return directive;
+            };
+            HtmlComponentRegistrar.prototype.extractAttributeBindings = function (def) {
+                if (def.properties || def.events) {
+                    var result = [];
+                    // create properties bindings:
+                    if (def.properties) {
+                        for (var i = 0; i < def.properties.length; i++) {
+                            var propertyName = def.properties[i];
+                            var ctrlName = this.utility.camelCaseTagName(propertyName);
+                            result.push({
+                                name: propertyName,
+                                ctrlName: ctrlName,
+                                type: 'text'
+                            });
+                            // register another binding with 'bind-' prefix
+                            result.push({
+                                name: 'bind-' + propertyName,
+                                ctrlName: ctrlName,
+                                type: 'data'
+                            });
+                        }
+                    }
+                    if (def.events) {
+                        for (var i = 0; i < def.events.length; i++) {
+                            var eventName = def.events[i];
+                            result.push({
+                                name: 'on-' + eventName,
+                                ctrlName: eventName,
+                                type: 'expr',
+                                // indicates that we need to create EventEmitter class to component's property
+                                $$eventEmitter: true
+                            });
+                        }
+                    }
+                    return result;
+                }
+                else {
+                    return def.attributes || [];
+                }
             };
             HtmlComponentRegistrar.prototype.getRequirementsForComponent = function (component) {
                 if (angular.isDefined(component.require)) {
@@ -507,6 +545,22 @@ var jasper;
 (function (jasper) {
     var core;
     (function (core) {
+        var EventEmitter = (function () {
+            function EventEmitter(fn) {
+                this.fn = fn;
+            }
+            EventEmitter.prototype.next = function (eventArgs) {
+                this.fn({ $event: eventArgs });
+            };
+            return EventEmitter;
+        })();
+        core.EventEmitter = EventEmitter;
+    })(core = jasper.core || (jasper.core = {}));
+})(jasper || (jasper = {}));
+var jasper;
+(function (jasper) {
+    var core;
+    (function (core) {
         var JasperComponent = (function () {
             function JasperComponent() {
             }
@@ -549,6 +603,110 @@ var jasper;
             return JasperComponent;
         })();
         core.JasperComponent = JasperComponent;
+    })(core = jasper.core || (jasper.core = {}));
+})(jasper || (jasper = {}));
+var jasper;
+(function (jasper) {
+    var core;
+    (function (core) {
+        function JasperDirectiveWrapperFactory(ctor, bindings, utility) {
+            var additionalInjectables = ['$scope', '$attrs', '$parse', '$interpolate'];
+            // add some injectables to the component
+            var wrapperInject = additionalInjectables.concat(ctor.$inject || []);
+            var attributes = camelCaseBindings(bindings, utility);
+            var wrapper = function JasperComponentWrapper(scope, attrs, $parse, $interpolate) {
+                var _this = this;
+                this.$$scope = scope;
+                var parentScope = scope.$parent;
+                if (attributes.length) {
+                    var onNewScopeDestroyed = [];
+                    attributes.forEach(function (attrBinding) {
+                        var attrName = attrBinding.name;
+                        var ctrlProppertyName = attrBinding.ctrlName || attrName;
+                        switch (attrBinding.type) {
+                            case 'text':
+                                if (!attrs.hasOwnProperty(attrName))
+                                    break;
+                                _this[ctrlProppertyName] = $interpolate(attrs[attrName])(parentScope);
+                                var unbind = attrs.$observe(attrName, function (val, oldVal) {
+                                    changeCtrlProperty(_this, ctrlProppertyName, val, oldVal);
+                                });
+                                onNewScopeDestroyed.push(unbind);
+                                break;
+                            case 'expr':
+                            case 'event':
+                                // Don't assign Object.prototype method to scope
+                                var eventFn;
+                                if (!attrs.hasOwnProperty(attrName)) {
+                                    eventFn = angular.noop;
+                                }
+                                else {
+                                    var parentGet = null;
+                                    eventFn = function (locals) {
+                                        if (!parentGet) {
+                                            parentGet = $parse(attrs[attrName]);
+                                        }
+                                        if (parentGet === angular.noop) {
+                                            return;
+                                        }
+                                        return parentGet(parentScope, locals);
+                                    };
+                                }
+                                _this[ctrlProppertyName] = attrBinding.$$eventEmitter ? new core.EventEmitter(eventFn) : eventFn;
+                                break;
+                            default:
+                                if (!attrs.hasOwnProperty(attrName))
+                                    break;
+                                var attrValue = parentScope.$eval(attrs[attrName]);
+                                _this[ctrlProppertyName] = attrValue;
+                                var unwatch = parentScope.$watch(attrs[attrName], function (val, oldVal) {
+                                    changeCtrlProperty(_this, ctrlProppertyName, val, oldVal);
+                                });
+                                onNewScopeDestroyed.push(unwatch);
+                                break;
+                        }
+                    });
+                    if (onNewScopeDestroyed.length) {
+                        var unbindWatchers = function () {
+                            for (var i = 0; i < onNewScopeDestroyed.length; i++) {
+                                onNewScopeDestroyed[i]();
+                            }
+                            onNewScopeDestroyed = null;
+                        };
+                        scope.$on('$destroy', unbindWatchers);
+                    }
+                }
+                ctor.apply(this, Array.prototype.slice.call(arguments, additionalInjectables.length, arguments.length));
+                return this;
+            };
+            wrapper.prototype = ctor.prototype;
+            wrapper.$inject = wrapperInject;
+            return wrapper;
+        }
+        core.JasperDirectiveWrapperFactory = JasperDirectiveWrapperFactory;
+        function camelCaseBindings(bindings, utility) {
+            if (!bindings.length)
+                return bindings;
+            var result = [];
+            for (var i = 0; i < bindings.length; i++) {
+                result.push({
+                    name: utility.camelCaseTagName(bindings[i].name),
+                    ctrlName: bindings[i].ctrlName,
+                    type: bindings[i].type,
+                    $$eventEmitter: bindings[i].$$eventEmitter
+                });
+            }
+            return result;
+        }
+        function changeCtrlProperty(ctrl, propertyName, newValue, oldValue) {
+            if (newValue === oldValue)
+                return; // do not pass property id it does not change
+            ctrl[propertyName] = newValue;
+            var methodName = propertyName + '_change';
+            if (ctrl[methodName]) {
+                ctrl[methodName].call(ctrl, newValue, oldValue);
+            }
+        }
     })(core = jasper.core || (jasper.core = {}));
 })(jasper || (jasper = {}));
 angular.module('jasperCore', ['ng']).provider('jasperComponent', jasper.core.ComponentProvider).provider('jasperDecorator', jasper.core.DecoratorComponentProvider).provider('jasperService', jasper.core.ServiceProvider).provider('jasperFilter', jasper.core.FilterProvider).provider('jasperValue', jasper.core.ValueProvider).provider('jasperConstant', jasper.core.ConstantProvider).service('$globalEvents', jasper.core.GlobalEventsService);
@@ -710,17 +868,18 @@ var jasper;
                     return this.loadAreas(areaName);
                 }
             };
-            JasperAreasService.prototype.initArea = function (areaName) {
+            JasperAreasService.prototype.initArea = function (areaName, cb) {
                 if (!this.config) {
                     // resolve unregistred areas (bootstrapped)
-                    return this.q.when(true);
+                    return cb();
                 }
                 var area = this.ensureArea(areaName);
                 if (!area.scripts || !area.scripts.length) {
-                    // no scripts specified for area (may be bootstraped - allready loaded with _base.min.js)
-                    return this.q.when(true);
+                    return cb();
                 }
-                return this.loadiingAreas.addInitializer(areaName);
+                return this.loadiingAreas.addInitializer(areaName).then(function () {
+                    return cb();
+                });
             };
             JasperAreasService.prototype.loadAreas = function (areas, hops) {
                 var _this = this;
@@ -986,7 +1145,7 @@ var jasper;
 /// <reference path="core/components/HtmlComponentRegistrar.ts" />
 /// <reference path="core/components/IComponentProvider.ts" />
 /// <reference path="core/components/IHtmlComponent.ts" />
-/// <reference path="core/components/IAttributeBinding.ts" />
+/// <reference path="core/IAttributeBinding.ts" />
 /// <reference path="core/components/IHtmlComponentDefinition.ts" />
 /// <reference path="core/decorators/DecoratorComponentProvider.ts" />
 /// <reference path="core/decorators/HtmlDecoratorRegistrar.ts" />
@@ -1001,7 +1160,9 @@ var jasper;
 /// <reference path="core/values/ValueProvider.ts" />
 /// <reference path="core/constants/ConstantProvider.ts" />
 /// <reference path="core/GlobalEvents.ts" />
+/// <reference path="core/EventEmitter.ts" />
 /// <reference path="core/JasperComponent.ts" />
+/// <reference path="core/JasperDirectiveWrapperFactory.ts" />
 /// <reference path="core/module.ts" />
 // AREAS
 /// <reference path="areas/JasperAreaDirective.ts" />

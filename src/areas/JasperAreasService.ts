@@ -152,18 +152,18 @@
             }
         }
 
-        initArea(areaName:string):ng.IPromise<any> {
+        initArea(areaName:string, cb:()=>any) {
             if (!this.config) {
                 // resolve unregistred areas (bootstrapped)
-                return this.q.when(true);
+                return cb();
             }
             var area = this.ensureArea(areaName);
             if (!area.scripts || !area.scripts.length) {
-                // no scripts specified for area (may be bootstraped - allready loaded with _base.min.js)
-                return this.q.when(true);
+                return cb();
             }
-
-            return this.loadiingAreas.addInitializer(areaName);
+            return this.loadiingAreas.addInitializer(areaName).then(function () {
+                return cb();
+            });
         }
 
         loadAreas(areas:string, hops?:number):ng.IPromise<any>;
