@@ -217,6 +217,7 @@ declare module jasper.core {
          * Referenced components will be available in the 'link' method of the component.
          */
         require?: any;
+        templateNamespace?: string;
     }
 }
 declare module jasper.core {

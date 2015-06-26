@@ -180,6 +180,7 @@ var jasper;
                 directive.transclude = def.transclude === 'true' ? true : def.transclude;
                 directive.templateUrl = def.templateUrl;
                 directive.replace = def.replace;
+                directive.templateNamespace = def.templateNamespace;
                 if (angular.isDefined(def.template))
                     directive.template = def.template;
                 directive.require = this.getRequirementsForComponent(def);

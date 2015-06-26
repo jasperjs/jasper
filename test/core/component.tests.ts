@@ -271,7 +271,7 @@ describe('Jasper component', () => {
         expect(oldValue).toEqual('test');
     }));
 
-    fit('should create bindings for properties', inject(($compile, $rootScope) => {
+    it('should create bindings for properties', inject(($compile, $rootScope) => {
 
         var instance;
         var component = function() { instance = this; };
