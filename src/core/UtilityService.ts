@@ -33,6 +33,8 @@
          * @param events            array of string. Represent events of the component: ['statusChanged']
          */
         fetchAttributeBindings(properties?:any, events?:string[]):IAttributeBinding[];
+
+        extractAttributeBindings(def:IHtmlComponentDefinition):IAttributeBinding[];
     }
 
     export class UtilityService implements IUtilityService {
@@ -120,6 +122,45 @@
                 });
             }
             return attributes;
+        }
+
+        extractAttributeBindings(def:IHtmlComponentDefinition):IAttributeBinding[] {
+            if (def.properties || def.events) {
+                var result:IAttributeBinding[] = [];
+                // create properties bindings:
+                if (def.properties) {
+                    for (var i = 0; i < def.properties.length; i++) {
+                        var propertyName = def.properties[i];
+                        var ctrlName = this.camelCaseTagName(propertyName);
+                        result.push({
+                            name: propertyName,
+                            ctrlName: ctrlName,
+                            type: 'text'
+                        });
+                        // register another binding with 'bind-' prefix
+                        result.push({
+                            name: 'bind-' + propertyName,
+                            ctrlName: ctrlName,
+                            type: 'data'
+                        });
+                    }
+                }
+                if (def.events) {
+                    for (var i = 0; i < def.events.length; i++) {
+                        var eventName = def.events[i];
+                        result.push({
+                            name: 'on-' + eventName,
+                            ctrlName: eventName,
+                            type: 'expr',
+                            // indicates that we need to create EventEmitter class to component's property
+                            $$eventEmitter: true
+                        });
+                    }
+                }
+                return result;
+            } else {
+                return def.attributes || [];
+            }
         }
 
         private getter(obj:any, path:string):any {

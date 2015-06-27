@@ -42,6 +42,7 @@ declare module jasper.core {
          * @param events            array of string. Represent events of the component: ['statusChanged']
          */
         fetchAttributeBindings(properties?: any, events?: string[]): IAttributeBinding[];
+        extractAttributeBindings(def: IHtmlComponentDefinition): IAttributeBinding[];
     }
     class UtilityService implements IUtilityService {
         getComponentControllers(controllers: any, directive: ng.IDirective): IComponentControllers;
@@ -50,6 +51,7 @@ declare module jasper.core {
         camelCase(source: string): string;
         camelCaseTagName(tagName: string): string;
         fetchAttributeBindings(properties?: any, events?: string[]): IAttributeBinding[];
+        extractAttributeBindings(def: IHtmlComponentDefinition): IAttributeBinding[];
         private getter(obj, path);
     }
 }
@@ -61,7 +63,6 @@ declare module jasper.core {
         register(component: IHtmlComponentDefinition): void;
         private getScopeDefinition(def);
         private createDirectiveFor(def);
-        private extractAttributeBindings(def);
         private getRequirementsForComponent(component);
     }
 }
@@ -289,6 +290,30 @@ declare module jasper.core {
          * If true jasper assign evaluated result of decorator expression
          */
         eval?: boolean;
+        /**
+         * Properties it's a new way to define external decorator properties.
+         *
+         * Example: ['caption']
+         *
+         * You can use it in two ways:
+         *
+         * <element decorator bind-decorator-caption="someExpression"></element>
+         *
+         * If an attribute has 'bind-' prefix - it will bound to decorator's field as the result of passed expression.
+         * If you use attribute name - it will bound as text.
+         *
+         */
+        properties?: string[];
+        /**
+         * Events it's a new way to define decorator's events.
+         *
+         * Example: ['change']
+         *
+         * You can use with component with 'on-' prefix with attribute
+         *
+         * <element decorator on-change="someMethod()"></element>
+         */
+        events?: string[];
     }
 }
 declare module jasper.core {
@@ -439,7 +464,7 @@ declare module jasper.core {
     }
 }
 declare module jasper.core {
-    function JasperDirectiveWrapperFactory(ctor: any, bindings: IAttributeBinding[], utility: IUtilityService): (scope: ng.IScope, attrs: any, $parse: ng.IParseService, $interpolate: ng.IInterpolateService) => any;
+    function JasperDirectiveWrapperFactory(ctor: any, bindings: IAttributeBinding[], utility: IUtilityService, isolateScope: boolean): (scope: ng.IScope, $element: any, attrs: any, $parse: ng.IParseService, $interpolate: ng.IInterpolateService) => any;
 }
 declare module jasper.areas {
     class JasperAreaDirective {

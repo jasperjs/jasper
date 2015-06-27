@@ -2,34 +2,32 @@
 
     export class HtmlDecoratorRegistrar implements IHtmlRegistrar<IHtmlDecoratorDefinition> {
 
-        private directive: (name: string, directiveFactory: Function) => ng.ICompileProvider;
-        private utility: IUtilityService;
+        private directive:(name:string, directiveFactory:Function) => ng.ICompileProvider;
+        private utility:IUtilityService;
 
-        constructor(compileProvider: ng.ICompileProvider) {
+        constructor(compileProvider:ng.ICompileProvider) {
             this.directive = compileProvider.directive;
             this.utility = new UtilityService();
         }
 
-        register(component: IHtmlDecoratorDefinition) {
+        register(component:IHtmlDecoratorDefinition) {
             var ddo = this.createDirectiveFor(component);
             this.directive(component.name, () => ddo);
         }
 
-        private createDirectiveFor(def: IHtmlDecoratorDefinition): ng.IDirective {
-            var directive: ng.IDirective = {
+        private createDirectiveFor(def:IHtmlDecoratorDefinition):ng.IDirective {
+            var directive:ng.IDirective = {
                 restrict: 'A',
-                scope: false
+                scope: false // decorators do not create own context
             };
             var ctrl = def.ctrl || def.ctor;
             if (!ctrl) {
                 throw new Error(def.name + ' must specify constructor');
             }
-
-            directive.scope[def.name] = '=';
-            directive.controller = this.utility.getFactoryOf(ctrl);
+            directive.controller = JasperDirectiveWrapperFactory(ctrl, this.utility.extractAttributeBindings(def), this.utility, false);
             directive.require = this.getRequirementsForComponent(def);
 
-            directive.link = (scope: ng.IScope, element: JQuery, attrs: ng.IAttributes, controllers: any) => {
+            directive.link = (scope:ng.IScope, element:JQuery, attrs:ng.IAttributes, controllers:any) => {
                 var ctrls = this.utility.getComponentControllers(controllers, directive);
                 ctrls.main.$$scope = scope;
 
@@ -44,25 +42,30 @@
                 if (ctrls.main.link)
                     ctrls.main.link(value, element[0], attrs, ctrls.controllersToPass);
 
-                if (ctrls.main.onValueChanged && attrs[def.name] && evl) {
-                    scope.$watch(attrExpr, (newValue: any, oldValue: any) => {
+                var onValueChangedBinding;
+                if (ctrls.main.onValueChanged && attrs.hasOwnProperty(def.name) && evl) {
+                    onValueChangedBinding = scope.$watch(attrExpr, (newValue:any, oldValue:any) => {
                         ctrls.main.onValueChanged(newValue, oldValue);
                     });
                 }
+                var hasDestroyLifecycle = ctrls.main.destroyComponent && angular.isFunction(ctrls.main.destroyComponent);
+                // when element is destroyed - invoke component method
+                element.on('$destroy', () => {
+                    if (hasDestroyLifecycle) {
+                        ctrls.main.destroyComponent.call();
+                    }
+                    if(onValueChangedBinding){
+                        onValueChangedBinding();
+                    }
+                    ctrls.main.$$scope = null;
+                });
 
-                if (ctrls.main.destroyComponent && angular.isFunction(ctrls.main.destroyComponent)) {
-                    // when element is destroyed - invoke component method
-                    element.on('$destroy', () => {
-                        ctrls.main.destroyComponent();
-                        ctrls.main.$$scope = null;
-                    });
-                }
             };
 
             return directive;
         }
 
-        private getRequirementsForComponent(component: IHtmlDecoratorDefinition) {
+        private getRequirementsForComponent(component:IHtmlDecoratorDefinition) {
             if (angular.isDefined(component.require)) {
                 var req = [component.name];
                 if (angular.isArray(component.require))
@@ -76,9 +79,9 @@
             }
         }
 
-        private getComponentControllers(controllers, directive: ng.IDirective): IComponentControllers {
+        private getComponentControllers(controllers, directive:ng.IDirective):IComponentControllers {
             var controllersToPass;
-            var controller: IHtmlComponent;
+            var controller:IHtmlComponent;
 
             if (directive.require && angular.isArray(directive.require)) {
 

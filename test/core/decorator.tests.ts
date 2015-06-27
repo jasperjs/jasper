@@ -25,7 +25,7 @@
         compileProvider = new jasper.mocks.TestCompileProvider();
     });
 
-    it('Test correct decorator element and value bindings', inject(($compile, $rootScope) => {
+    it('should bind correct element', inject(($compile, $rootScope) => {
         var decoratorValue, linkedElement;
 
         var component = function() {
@@ -48,7 +48,7 @@
         expect(element[0]).toEqual(linkedElement);
     }));
 
-    it('Test decorator onValueChanged method invocation', inject(($compile, $rootScope) => {
+    it('should invoke onValueChanged method when property changed', inject(($compile, $rootScope) => {
         var newVal, oldVal;
 
         var component = function() {
@@ -77,7 +77,7 @@
         expect(newVal).toEqual('changed test');
     }));
 
-    it('Test decorator destroyComponent method invocation', inject(($compile, $rootScope) => {
+    it('should invoke destroyComponent method when component is destroying', inject(($compile, $rootScope) => {
         var destroyInvoked = false;
         var component = function() {
             this.destroyComponent = function() {
@@ -101,7 +101,7 @@
     }));
 
 
-    it('Test decorator component $$scope assign', inject(($compile, $rootScope) => {
+    it('shouls assign $$scope property', inject(($compile, $rootScope) => {
         var componentScope: ng.IScope;
         // test component
         var component = function() {
@@ -120,5 +120,44 @@
         expect(componentScope).toBeDefined();
     }));
 
+    it('should bind properties to decorator controller', inject(($compile, $rootScope) => {
+        var instance;
+        var component = function() {
+            instance = this;
+        };
+        var definition: jasper.core.IHtmlDecoratorDefinition = {
+            name: 'myAttribute',
+            properties: ['color', 'caption'],
+            ctrl: component
+        }
+        registerDefinitionObject(definition);
+
+        var scope = $rootScope.$new();
+        scope.text='sample caption';
+        var element = $compile('<div my-attribute bind-caption="text" color="red"></div>')(scope);
+
+        expect(instance.color).toEqual('red');
+        expect(instance.caption).toEqual(scope.text);
+
+    }));
+
+    it('should bind event emitter to decorator controller', inject(($compile, $rootScope) => {
+        var instance;
+        var component = function() {
+            instance = this;
+        };
+        var definition: jasper.core.IHtmlDecoratorDefinition = {
+            name: 'myAttribute',
+            events: ['change'],
+            ctrl: component
+        }
+        registerDefinitionObject(definition);
+
+        var scope = $rootScope.$new();
+        $compile('<div my-attribute on-change="foo()" color="red"></div>')(scope);
+
+        expect(instance.change instanceof  jasper.core.EventEmitter).toBe(true);
+
+    }));
 
 });

@@ -84,6 +84,45 @@ var jasper;
                 }
                 return attributes;
             };
+            UtilityService.prototype.extractAttributeBindings = function (def) {
+                if (def.properties || def.events) {
+                    var result = [];
+                    // create properties bindings:
+                    if (def.properties) {
+                        for (var i = 0; i < def.properties.length; i++) {
+                            var propertyName = def.properties[i];
+                            var ctrlName = this.camelCaseTagName(propertyName);
+                            result.push({
+                                name: propertyName,
+                                ctrlName: ctrlName,
+                                type: 'text'
+                            });
+                            // register another binding with 'bind-' prefix
+                            result.push({
+                                name: 'bind-' + propertyName,
+                                ctrlName: ctrlName,
+                                type: 'data'
+                            });
+                        }
+                    }
+                    if (def.events) {
+                        for (var i = 0; i < def.events.length; i++) {
+                            var eventName = def.events[i];
+                            result.push({
+                                name: 'on-' + eventName,
+                                ctrlName: eventName,
+                                type: 'expr',
+                                // indicates that we need to create EventEmitter class to component's property
+                                $$eventEmitter: true
+                            });
+                        }
+                    }
+                    return result;
+                }
+                else {
+                    return def.attributes || [];
+                }
+            };
             UtilityService.prototype.getter = function (obj, path) {
                 var keys = path.split('.');
                 var key, len = keys.length;
@@ -170,7 +209,7 @@ var jasper;
                 var ctrl = def.ctrl || def.ctor;
                 if (ctrl) {
                     var ctor = this.utility.getFactoryOf(ctrl);
-                    directive.controller = core.JasperDirectiveWrapperFactory(ctor, this.extractAttributeBindings(def), this.utility);
+                    directive.controller = core.JasperDirectiveWrapperFactory(ctor, this.utility.extractAttributeBindings(def), this.utility, true);
                     directive.controllerAs = 'vm';
                     directive.scope = {};
                 }
@@ -185,45 +224,6 @@ var jasper;
                     directive.template = def.template;
                 directive.require = this.getRequirementsForComponent(def);
                 return directive;
-            };
-            HtmlComponentRegistrar.prototype.extractAttributeBindings = function (def) {
-                if (def.properties || def.events) {
-                    var result = [];
-                    // create properties bindings:
-                    if (def.properties) {
-                        for (var i = 0; i < def.properties.length; i++) {
-                            var propertyName = def.properties[i];
-                            var ctrlName = this.utility.camelCaseTagName(propertyName);
-                            result.push({
-                                name: propertyName,
-                                ctrlName: ctrlName,
-                                type: 'text'
-                            });
-                            // register another binding with 'bind-' prefix
-                            result.push({
-                                name: 'bind-' + propertyName,
-                                ctrlName: ctrlName,
-                                type: 'data'
-                            });
-                        }
-                    }
-                    if (def.events) {
-                        for (var i = 0; i < def.events.length; i++) {
-                            var eventName = def.events[i];
-                            result.push({
-                                name: 'on-' + eventName,
-                                ctrlName: eventName,
-                                type: 'expr',
-                                // indicates that we need to create EventEmitter class to component's property
-                                $$eventEmitter: true
-                            });
-                        }
-                    }
-                    return result;
-                }
-                else {
-                    return def.attributes || [];
-                }
             };
             HtmlComponentRegistrar.prototype.getRequirementsForComponent = function (component) {
                 if (angular.isDefined(component.require)) {
@@ -300,14 +300,13 @@ var jasper;
                 var _this = this;
                 var directive = {
                     restrict: 'A',
-                    scope: false
+                    scope: false // decorators do not create own context
                 };
                 var ctrl = def.ctrl || def.ctor;
                 if (!ctrl) {
                     throw new Error(def.name + ' must specify constructor');
                 }
-                directive.scope[def.name] = '=';
-                directive.controller = this.utility.getFactoryOf(ctrl);
+                directive.controller = core.JasperDirectiveWrapperFactory(ctrl, this.utility.extractAttributeBindings(def), this.utility, false);
                 directive.require = this.getRequirementsForComponent(def);
                 directive.link = function (scope, element, attrs, controllers) {
                     var ctrls = _this.utility.getComponentControllers(controllers, directive);
@@ -320,18 +319,23 @@ var jasper;
                     }
                     if (ctrls.main.link)
                         ctrls.main.link(value, element[0], attrs, ctrls.controllersToPass);
-                    if (ctrls.main.onValueChanged && attrs[def.name] && evl) {
-                        scope.$watch(attrExpr, function (newValue, oldValue) {
+                    var onValueChangedBinding;
+                    if (ctrls.main.onValueChanged && attrs.hasOwnProperty(def.name) && evl) {
+                        onValueChangedBinding = scope.$watch(attrExpr, function (newValue, oldValue) {
                             ctrls.main.onValueChanged(newValue, oldValue);
                         });
                     }
-                    if (ctrls.main.destroyComponent && angular.isFunction(ctrls.main.destroyComponent)) {
-                        // when element is destroyed - invoke component method
-                        element.on('$destroy', function () {
-                            ctrls.main.destroyComponent();
-                            ctrls.main.$$scope = null;
-                        });
-                    }
+                    var hasDestroyLifecycle = ctrls.main.destroyComponent && angular.isFunction(ctrls.main.destroyComponent);
+                    // when element is destroyed - invoke component method
+                    element.on('$destroy', function () {
+                        if (hasDestroyLifecycle) {
+                            ctrls.main.destroyComponent.call();
+                        }
+                        if (onValueChangedBinding) {
+                            onValueChangedBinding();
+                        }
+                        ctrls.main.$$scope = null;
+                    });
                 };
                 return directive;
             };
@@ -610,15 +614,15 @@ var jasper;
 (function (jasper) {
     var core;
     (function (core) {
-        function JasperDirectiveWrapperFactory(ctor, bindings, utility) {
-            var additionalInjectables = ['$scope', '$attrs', '$parse', '$interpolate'];
+        function JasperDirectiveWrapperFactory(ctor, bindings, utility, isolateScope) {
+            var additionalInjectables = ['$scope', '$element', '$attrs', '$parse', '$interpolate'];
             // add some injectables to the component
             var wrapperInject = additionalInjectables.concat(ctor.$inject || []);
             var attributes = camelCaseBindings(bindings, utility);
-            var wrapper = function JasperComponentWrapper(scope, attrs, $parse, $interpolate) {
+            var wrapper = function JasperComponentWrapper(scope, $element, attrs, $parse, $interpolate) {
                 var _this = this;
                 this.$$scope = scope;
-                var parentScope = scope.$parent;
+                var directiveScope = isolateScope ? scope.$parent : scope;
                 if (attributes.length) {
                     var onNewScopeDestroyed = [];
                     attributes.forEach(function (attrBinding) {
@@ -628,7 +632,7 @@ var jasper;
                             case 'text':
                                 if (!attrs.hasOwnProperty(attrName))
                                     break;
-                                _this[ctrlProppertyName] = $interpolate(attrs[attrName])(parentScope);
+                                _this[ctrlProppertyName] = $interpolate(attrs[attrName])(directiveScope);
                                 var unbind = attrs.$observe(attrName, function (val, oldVal) {
                                     changeCtrlProperty(_this, ctrlProppertyName, val, oldVal);
                                 });
@@ -650,7 +654,7 @@ var jasper;
                                         if (parentGet === angular.noop) {
                                             return;
                                         }
-                                        return parentGet(parentScope, locals);
+                                        return parentGet(directiveScope, locals);
                                     };
                                 }
                                 _this[ctrlProppertyName] = attrBinding.$$eventEmitter ? new core.EventEmitter(eventFn) : eventFn;
@@ -658,9 +662,9 @@ var jasper;
                             default:
                                 if (!attrs.hasOwnProperty(attrName))
                                     break;
-                                var attrValue = parentScope.$eval(attrs[attrName]);
+                                var attrValue = directiveScope.$eval(attrs[attrName]);
                                 _this[ctrlProppertyName] = attrValue;
-                                var unwatch = parentScope.$watch(attrs[attrName], function (val, oldVal) {
+                                var unwatch = directiveScope.$watch(attrs[attrName], function (val, oldVal) {
                                     changeCtrlProperty(_this, ctrlProppertyName, val, oldVal);
                                 });
                                 onNewScopeDestroyed.push(unwatch);
@@ -674,7 +678,12 @@ var jasper;
                             }
                             onNewScopeDestroyed = null;
                         };
-                        scope.$on('$destroy', unbindWatchers);
+                        if (isolateScope) {
+                            scope.$on('$destroy', unbindWatchers);
+                        }
+                        else {
+                            $element.on('$destroy', unbindWatchers);
+                        }
                     }
                 }
                 ctor.apply(this, Array.prototype.slice.call(arguments, additionalInjectables.length, arguments.length));

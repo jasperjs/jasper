@@ -23,5 +23,32 @@
          * If true jasper assign evaluated result of decorator expression
          */
         eval?: boolean;
+
+        /**
+         * Properties it's a new way to define external decorator properties.
+         *
+         * Example: ['caption']
+         *
+         * You can use it in two ways:
+         *
+         * <element decorator bind-decorator-caption="someExpression"></element>
+         *
+         * If an attribute has 'bind-' prefix - it will bound to decorator's field as the result of passed expression.
+         * If you use attribute name - it will bound as text.
+         *
+         */
+        properties?: string[];
+
+        /**
+         * Events it's a new way to define decorator's events.
+         *
+         * Example: ['change']
+         *
+         * You can use with component with 'on-' prefix with attribute
+         *
+         * <element decorator on-change="someMethod()"></element>
+         */
+        events?: string[];
+
     }
 } 
