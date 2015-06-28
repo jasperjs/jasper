@@ -2,14 +2,14 @@ module jasper.core {
     export function JasperDirectiveWrapperFactory(ctor:any,
                                                   bindings:IAttributeBinding[],
                                                   utility:IUtilityService,
-                                                  isolateScope: boolean) {
+                                                  isolateScope:boolean) {
         var additionalInjectables = ['$scope', '$element', '$attrs', '$parse', '$interpolate'];
         // add some injectables to the component
         var wrapperInject = additionalInjectables.concat(ctor.$inject || []);
         var attributes = camelCaseBindings(bindings, utility);
-        var wrapper = function JasperComponentWrapper(scope:ng.IScope, $element: any, attrs:any, $parse:ng.IParseService, $interpolate:ng.IInterpolateService) {
+        var wrapper = function JasperComponentWrapper(scope:ng.IScope, $element:any, attrs:any, $parse:ng.IParseService, $interpolate:ng.IInterpolateService) {
             this.$$scope = scope;
-            var directiveScope = isolateScope ? scope.$parent: scope;
+            var directiveScope = isolateScope ? scope.$parent : scope;
             if (attributes.length) {
                 var onNewScopeDestroyed = [];
                 attributes.forEach((attrBinding:IAttributeBinding) => {
@@ -65,14 +65,24 @@ module jasper.core {
                         }
                         onNewScopeDestroyed = null;
                     }
-                    if(isolateScope) {
+                    if (isolateScope) {
                         scope.$on('$destroy', unbindWatchers);
-                    }else{
+                    } else {
                         $element.on('$destroy', unbindWatchers)
                     }
                 }
             }
+            // component ctor invocation:
             ctor.apply(this, Array.prototype.slice.call(arguments, additionalInjectables.length, arguments.length));
+            // #bind-to syntax
+            if (isolateScope && attrs.hasOwnProperty('#bindTo')) {
+                var expr = $parse(attrs['#bindTo']);
+                expr.assign(directiveScope, this);
+                //remove reference after scope destroyed
+                scope.$on('$destroy', ()=>{
+                    expr.assign(directiveScope, undefined);
+                });
+            }
             return this;
         };
         wrapper.prototype = ctor.prototype;

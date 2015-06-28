@@ -686,7 +686,17 @@ var jasper;
                         }
                     }
                 }
+                // component ctor invocation:
                 ctor.apply(this, Array.prototype.slice.call(arguments, additionalInjectables.length, arguments.length));
+                // #bind-to syntax
+                if (isolateScope && attrs.hasOwnProperty('#bindTo')) {
+                    var expr = $parse(attrs['#bindTo']);
+                    expr.assign(directiveScope, this);
+                    //remove reference after scope destroyed
+                    scope.$on('$destroy', function () {
+                        expr.assign(directiveScope, undefined);
+                    });
+                }
                 return this;
             };
             wrapper.prototype = ctor.prototype;

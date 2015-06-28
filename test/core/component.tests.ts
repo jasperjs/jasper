@@ -355,4 +355,25 @@ describe('Jasper component', () => {
         expect(childInstance.color).toEqual('red');//parent override value for child
     }));
 
+
+    fit('should bind a component instance to #bind-to attribute', inject(($compile, $rootScope) => {
+
+        var component = function() { this.name='some component';  };
+
+        var definition: jasper.core.IHtmlComponentDefinition = {
+            name: 'myComponent',
+            ctrl: component,
+            template: '<p>hello {{vm.myColor}}</p>'
+        };
+        registerDefinitionObject(definition);
+        var scope = $rootScope.$new();
+        $compile('<my-component #bind-to="component"></my-component>')(scope);
+
+        expect(scope.component.name).toEqual('some component');
+
+        scope.$destroy();
+        expect(scope.component).toBeUndefined();
+
+    }));
+
 });
