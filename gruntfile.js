@@ -5,7 +5,12 @@
 
     grunt.initConfig({
         dist: 'dist',
+        pkg: grunt.file.readJSON('package.json'),
         uglify: {
+            options:{
+                banner: '/*! JasperJs https://github.com/jasperjs/jasper-application - v<%= pkg.version %> - ' +
+                '<%= grunt.template.today("yyyy-mm-dd") %> */'
+            },
             base: {
                 src: '<%= dist %>/jasper.js',
                 dest: '<%= dist %>/jasper.min.js'

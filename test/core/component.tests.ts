@@ -356,7 +356,7 @@ describe('Jasper component', () => {
     }));
 
 
-    fit('should bind a component instance to #bind-to attribute', inject(($compile, $rootScope) => {
+    it('should bind a component instance to #bind-to attribute', inject(($compile, $rootScope) => {
 
         var component = function() { this.name='some component';  };
 
