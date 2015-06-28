@@ -329,7 +329,7 @@ var jasper;
                     // when element is destroyed - invoke component method
                     element.on('$destroy', function () {
                         if (hasDestroyLifecycle) {
-                            ctrls.main.destroyComponent.call();
+                            ctrls.main.destroyComponent();
                         }
                         if (onValueChangedBinding) {
                             onValueChangedBinding();
