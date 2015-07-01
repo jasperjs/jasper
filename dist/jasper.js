@@ -555,7 +555,7 @@ var jasper;
                 this.fn = fn;
             }
             EventEmitter.prototype.next = function (eventArgs) {
-                this.fn({ $event: eventArgs });
+                this.fn(eventArgs ? { $event: eventArgs } : undefined);
             };
             return EventEmitter;
         })();

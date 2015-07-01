@@ -4,7 +4,7 @@ module jasper.core {
          * Fires event emitter
          * @param eventArgs     arguments that will be allowed as '$event' variable in the expression
          */
-        next(eventArgs:any): void;
+        next(eventArgs?:any): void;
     }
 
     export class EventEmitter implements IEventEmitter {
@@ -14,8 +14,8 @@ module jasper.core {
 
         }
 
-        next(eventArgs:any):void {
-            this.fn({$event: eventArgs});
+        next(eventArgs?:any):void {
+            this.fn(eventArgs ? { $event: eventArgs } : undefined);
         }
 
     }

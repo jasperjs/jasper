@@ -436,12 +436,12 @@ declare module jasper.core {
          * Fires event emitter
          * @param eventArgs     arguments that will be allowed as '$event' variable in the expression
          */
-        next(eventArgs: any): void;
+        next(eventArgs?: any): void;
     }
     class EventEmitter implements IEventEmitter {
         private fn;
         constructor(fn: Function);
-        next(eventArgs: any): void;
+        next(eventArgs?: any): void;
     }
 }
 declare module jasper.core {
