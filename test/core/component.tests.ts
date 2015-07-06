@@ -123,9 +123,7 @@ describe('Jasper component', () => {
         var componentScope: ng.IScope;
         // test component
         var component = function() {
-            this.initializeComponent = function() {
-                componentScope = this['$$scope'];
-            };
+            componentScope = this['$$scope'];
         };
         var definition: jasper.core.IHtmlComponentDefinition = {
             name: 'someTagCtor',
@@ -168,7 +166,9 @@ describe('Jasper component', () => {
         var attrValue;
         // test component
         var component = function() {
-            attrValue = this['someExpr'];
+            this.initializeComponent = function() {
+                attrValue = this['someExpr'];
+            };
         };
         var definition: jasper.core.IHtmlComponentDefinition = {
             name: 'someTag',
@@ -235,7 +235,7 @@ describe('Jasper component', () => {
         expect(invoked).toBe(false);
     }));
 
-    it('should that on change method invoked when property changed', inject(($compile, $rootScope) => {
+    it('should invoke on change method when property changed', inject(($compile, $rootScope) => {
         // test component
         var invoked  = false, newValue, oldValue;
         var component = function() {

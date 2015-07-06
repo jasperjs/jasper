@@ -1,4 +1,4 @@
-﻿describe('Core decorator tests', () => {
+﻿describe('Decorator component', () => {
 
     var registrar: jasper.core.HtmlDecoratorRegistrar, compileProvider: jasper.mocks.TestCompileProvider;
 
