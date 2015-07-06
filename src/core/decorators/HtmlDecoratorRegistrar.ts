@@ -43,22 +43,19 @@
                     ctrls.main.link(value, element[0], attrs, ctrls.controllersToPass);
 
                 var onValueChangedBinding;
+
                 if (ctrls.main.onValueChanged && attrs.hasOwnProperty(def.name) && evl) {
                     onValueChangedBinding = scope.$watch(attrExpr, (newValue:any, oldValue:any) => {
                         ctrls.main.onValueChanged(newValue, oldValue);
                     });
                 }
-                var hasDestroyLifecycle = ctrls.main.destroyComponent && angular.isFunction(ctrls.main.destroyComponent);
-                // when element is destroyed - invoke component method
-                element.on('$destroy', () => {
-                    if (hasDestroyLifecycle) {
-                        ctrls.main.destroyComponent();
-                    }
-                    if(onValueChangedBinding){
+
+
+                if (onValueChangedBinding) {
+                    element.on('$destroy', () => {
                         onValueChangedBinding();
-                    }
-                    ctrls.main.$$scope = null;
-                });
+                    });
+                }
 
             };
 

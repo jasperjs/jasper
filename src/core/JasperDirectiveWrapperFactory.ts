@@ -8,49 +8,55 @@ module jasper.core {
         var wrapperInject = additionalInjectables.concat(ctor.$inject || []);
         var attributes = camelCaseBindings(bindings, utility);
         var wrapper = function JasperComponentWrapper(scope:ng.IScope, $element:any, attrs:any, $parse:ng.IParseService, $interpolate:ng.IInterpolateService) {
-            this.$$scope = scope;
+            var ctrl = this;
+            ctrl.$$scope = scope;
 
             // component ctor invocation:
-            ctor.apply(this, Array.prototype.slice.call(arguments, additionalInjectables.length, arguments.length));
+            ctor.apply(ctrl, Array.prototype.slice.call(arguments, additionalInjectables.length, arguments.length));
             var directiveScope = isolateScope ? scope.$parent : scope;
 
+            var onNewScopeDestroyed = [];
+            // bind attributes to the component
             if (attributes.length) {
-                var onNewScopeDestroyed = [];
-                // bind attributes to the component
                 for (var i = 0; i < attributes.length; i++) {
-                    bindAttribute(this, attributes[i], directiveScope, attrs, $parse, $interpolate, onNewScopeDestroyed);
+                    bindAttribute(ctrl, attributes[i], directiveScope, attrs, $parse, $interpolate, onNewScopeDestroyed);
                 }
+            }
+            // subscribe on scope destroying:
+            var onDestroy = function () {
                 if (onNewScopeDestroyed.length) {
-                    var unbindWatchers = function () {
-                        for (var i = 0; i < onNewScopeDestroyed.length; i++) {
-                            onNewScopeDestroyed[i]();
-                        }
-                        onNewScopeDestroyed = null;
-                    };
-                    if (isolateScope) {
-                        scope.$on('$destroy', unbindWatchers);
-                    } else {
-                        $element.on('$destroy', unbindWatchers)
+                    for (var i = 0; i < onNewScopeDestroyed.length; i++) {
+                        onNewScopeDestroyed[i]();
                     }
                 }
+                if (angular.isDefined(ctrl.destroyComponent)) {
+                    ctrl.destroyComponent();
+                }
+                onNewScopeDestroyed = null;
+                ctrl.$$scope = null;
+            };
+            if (isolateScope) {
+                scope.$on('$destroy', () => onDestroy());
+            } else {
+                $element.on('$destroy', () => onDestroy())
             }
             // #bind-to syntax
             if (isolateScope && attrs.hasOwnProperty('#bindTo')) {
                 var expr = $parse(attrs['#bindTo']);
-                expr.assign(directiveScope, this);
+                expr.assign(directiveScope, ctrl);
                 //remove reference after scope destroyed
                 scope.$on('$destroy', ()=> {
                     expr.assign(directiveScope, undefined);
                 });
             }
-            return this;
+            return ctrl;
         };
         wrapper.prototype = ctor.prototype;
         wrapper.$inject = wrapperInject;
         return wrapper;
     }
 
-    function bindAttribute(ctrl: any,
+    function bindAttribute(ctrl:any,
                            attrBinding:IAttributeBinding,
                            directiveScope:ng.IScope,
                            attrs:any,

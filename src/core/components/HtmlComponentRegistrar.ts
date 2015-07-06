@@ -18,16 +18,8 @@
                     return {
                         pre: (scope:ng.IScope, element:any, attrs:ng.IAttributes, controllers:any) => {
                             var ctrls = this.utility.getComponentControllers(controllers, ddo);
-
                             if (ctrls.main.initializeComponent)
                                 ctrls.main.initializeComponent.call(ctrls.main);
-
-                            if (ctrls.main.destroyComponent) {
-                                scope.$on('$destroy', () => {
-                                    ctrls.main.destroyComponent.call(ctrls.main);
-                                    ctrls.main.$$scope = null;
-                                });
-                            }
                         },
                         post: (scope:ng.IScope, element:any, attrs:ng.IAttributes, controllers:any, tranclude:any) => {
                             var ctrls = this.utility.getComponentControllers(controllers, ddo);

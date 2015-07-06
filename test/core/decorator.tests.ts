@@ -78,10 +78,10 @@
     }));
 
     it('should invoke destroyComponent method when component is destroying', inject(($compile, $rootScope) => {
-        var destroyInvoked = false;
+        var destroyInvokedTimes = 0;
         var component = function() {
             this.destroyComponent = function() {
-                destroyInvoked = true;
+                destroyInvokedTimes ++;
             };
         };
         var definition: jasper.core.IHtmlDecoratorDefinition = {
@@ -93,10 +93,10 @@
         var scope = $rootScope.$new();
         var element = $compile('<div my-attribute="\'test\'"></div>')(scope);
         scope.$digest();
-        expect(destroyInvoked).toBe(false);
+        expect(destroyInvokedTimes).toBe(0);
 
         element.remove();
-        expect(destroyInvoked).toBe(true);
+        expect(destroyInvokedTimes).toBe(1);
 
     }));
 
