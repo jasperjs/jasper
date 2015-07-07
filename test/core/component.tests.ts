@@ -367,9 +367,15 @@ describe('Jasper component', () => {
         };
         registerDefinitionObject(definition);
         var scope = $rootScope.$new();
-        $compile('<my-component #bind-to="component"></my-component>')(scope);
+        var boundInvoked = false, boundComponent;
+        scope.onBound = () => {
+            boundComponent = scope.component;
+            boundInvoked = true;
+        };
+        $compile('<my-component #on-bound="onBound()" #bind-to="component"></my-component>')(scope);
 
-        expect(scope.component.name).toEqual('some component');
+        expect(boundInvoked).toBe(true);
+        expect(boundComponent.name).toEqual('some component');
 
         scope.$destroy();
         expect(scope.component).toBeUndefined();

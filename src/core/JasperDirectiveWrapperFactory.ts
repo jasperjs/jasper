@@ -78,8 +78,11 @@ module jasper.core {
             if (isolateScope && attrs.hasOwnProperty('#bindTo')) {
                 var expr = $parse(attrs['#bindTo']);
                 expr.assign(directiveScope, this);
+                if (attrs.hasOwnProperty('#onBound')) {
+                    directiveScope.$eval(attrs['#onBound']);
+                }
                 //remove reference after scope destroyed
-                scope.$on('$destroy', ()=>{
+                scope.$on('$destroy', ()=> {
                     expr.assign(directiveScope, undefined);
                 });
             }
