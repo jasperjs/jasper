@@ -109,7 +109,7 @@ module jasper.core {
     }
 
     function changeCtrlProperty(ctrl:any, propertyName:string, newValue:any, oldValue:any) {
-        if (newValue === oldValue)
+        if (newValue === oldValue && newValue === ctrl[propertyName])
             return; // do not pass property id it does not change
         ctrl[propertyName] = newValue;
         var methodName = propertyName + '_change';

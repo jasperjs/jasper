@@ -108,9 +108,10 @@ var jasper;
                     if (def.events) {
                         for (var i = 0; i < def.events.length; i++) {
                             var eventName = def.events[i];
+                            var ctrlName = this.camelCaseTagName(eventName);
                             result.push({
                                 name: 'on-' + eventName,
-                                ctrlName: eventName,
+                                ctrlName: ctrlName,
                                 type: 'expr',
                                 // indicates that we need to create EventEmitter class to component's property
                                 $$eventEmitter: true
@@ -722,7 +723,7 @@ var jasper;
             return result;
         }
         function changeCtrlProperty(ctrl, propertyName, newValue, oldValue) {
-            if (newValue === oldValue)
+            if (newValue === oldValue && newValue === ctrl[propertyName])
                 return; // do not pass property id it does not change
             ctrl[propertyName] = newValue;
             var methodName = propertyName + '_change';

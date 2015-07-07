@@ -271,7 +271,7 @@ describe('Jasper component', () => {
         expect(oldValue).toEqual('test');
     }));
 
-    it('should create bindings for properties', inject(($compile, $rootScope) => {
+    it('should create bindings for properties and events', inject(($compile, $rootScope) => {
 
         var instance;
         var component = function() { instance = this; };
@@ -280,19 +280,19 @@ describe('Jasper component', () => {
             name: 'myComponent',
             ctrl: component,
             properties:['myColor','otherColor'],
-            events: ['click'],
+            events: ['my-click'],
             template: '<p>hello {{vm.myColor}}</p>'
         };
         registerDefinitionObject(definition);
         var scope = $rootScope.$new();
         scope.property = 'otherColorTest';
-        $compile('<my-component my-color="test" on-click="someMethod()" bind-other-color="property"></my-component>')(scope);
+        $compile('<my-component my-color="test" on-my-click="someMethod()" bind-other-color="property"></my-component>')(scope);
 
         expect(instance.myColor).toEqual('test');
         expect(instance.otherColor).toEqual(scope.property);
 
-        expect(instance.click).toBeDefined(); //
-        expect(instance.click instanceof jasper.core.EventEmitter).toBeTruthy();
+        expect(instance.myClick).toBeDefined();
+        expect(instance.myClick instanceof jasper.core.EventEmitter).toBeTruthy();
     }));
 
     it('should ignore attributes property if properties or events specified', inject(($compile, $rootScope) => {
