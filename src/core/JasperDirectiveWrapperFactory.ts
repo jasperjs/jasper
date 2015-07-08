@@ -18,9 +18,12 @@ module jasper.core {
                     switch (attrBinding.type) {
                         case 'text':
                             if (!attrs.hasOwnProperty(attrName)) break;
-                            this[ctrlProppertyName] = $interpolate(attrs[attrName])(directiveScope);
+                            var initValue = $interpolate(attrs[attrName])(directiveScope);
+                            this[ctrlProppertyName] = initValue;
                             var unbind = attrs.$observe(attrName, (val) => {
-                                changeCtrlProperty(this, ctrlProppertyName, val);
+                                if(val !== initValue) {
+                                    changeCtrlProperty(this, ctrlProppertyName, val);
+                                }
                             });
                             onNewScopeDestroyed.push(unbind);
                             break;
@@ -49,10 +52,13 @@ module jasper.core {
                         default:
                             if (!attrs.hasOwnProperty(attrName)) break;
 
-                            var attrValue = directiveScope.$eval(attrs[attrName]);
-                            this[ctrlProppertyName] = attrValue;
+                            var initBindingValue = directiveScope.$eval(attrs[attrName]);
+                            this[ctrlProppertyName] = initBindingValue;
                             var unwatch = directiveScope.$watch($parse(attrs[attrName], (val) => {
-                                changeCtrlProperty(this, ctrlProppertyName, val);
+                                // detect change after initial setup
+                                if(val !== initBindingValue) {
+                                    changeCtrlProperty(this, ctrlProppertyName, val);
+                                }
                                 return val;
                             }), null);
                             onNewScopeDestroyed.push(unwatch);

@@ -316,6 +316,30 @@ describe('Jasper component', () => {
         expect(instance.someAttr).toBeUndefined();
     }));
 
+    it('should be able to setup properties if it is not defined at parent level', inject(($compile, $rootScope) => {
+
+        var instance;
+        // test component
+        var component = function() {
+            this.color='blue';
+            this.title='hello world';
+            instance = this;
+        };
+
+        var definition: jasper.core.IHtmlComponentDefinition = {
+            name: 'myComponent',
+            ctrl: component,
+            properties:['color', 'title'],
+            template: '<p>hello {{vm.myColor}}</p>'
+        };
+        registerDefinitionObject(definition);
+        var scope = $rootScope.$new();
+        $compile('<my-component color="red" bind-title="undefProp"></my-component>')(scope);
+        scope.$digest();
+        expect(instance.color).toEqual('blue');
+        expect(instance.title).toEqual('hello world');
+    }));
+
 
     it('should does not propagate changes from child components to parent (one-way binding)', inject(($compile, $rootScope) => {
 
