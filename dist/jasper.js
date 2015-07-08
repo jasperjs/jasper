@@ -628,18 +628,19 @@ var jasper;
                     var onNewScopeDestroyed = [];
                     attributes.forEach(function (attrBinding) {
                         var attrName = attrBinding.name;
-                        var ctrlProppertyName = attrBinding.ctrlName || attrName;
+                        var ctrlPropertyName = attrBinding.ctrlName || attrName, lastValue;
+                        var parentValueWatch = function (val) {
+                            if (val !== lastValue) {
+                                changeCtrlProperty(_this, ctrlPropertyName, val);
+                            }
+                            return lastValue = val;
+                        };
                         switch (attrBinding.type) {
                             case 'text':
                                 if (!attrs.hasOwnProperty(attrName))
                                     break;
-                                var initValue = $interpolate(attrs[attrName])(directiveScope);
-                                _this[ctrlProppertyName] = initValue;
-                                var unbind = attrs.$observe(attrName, function (val) {
-                                    if (val !== initValue) {
-                                        changeCtrlProperty(_this, ctrlProppertyName, val);
-                                    }
-                                });
+                                _this[ctrlPropertyName] = lastValue = $interpolate(attrs[attrName])(directiveScope);
+                                var unbind = attrs.$observe(attrName, parentValueWatch);
                                 onNewScopeDestroyed.push(unbind);
                                 break;
                             case 'expr':
@@ -661,20 +662,13 @@ var jasper;
                                         return parentGet(directiveScope, locals);
                                     };
                                 }
-                                _this[ctrlProppertyName] = attrBinding.$$eventEmitter ? new core.EventEmitter(eventFn) : eventFn;
+                                _this[ctrlPropertyName] = attrBinding.$$eventEmitter ? new core.EventEmitter(eventFn) : eventFn;
                                 break;
                             default:
                                 if (!attrs.hasOwnProperty(attrName))
                                     break;
-                                var initBindingValue = directiveScope.$eval(attrs[attrName]);
-                                _this[ctrlProppertyName] = initBindingValue;
-                                var unwatch = directiveScope.$watch($parse(attrs[attrName], function (val) {
-                                    // detect change after initial setup
-                                    if (val !== initBindingValue) {
-                                        changeCtrlProperty(_this, ctrlProppertyName, val);
-                                    }
-                                    return val;
-                                }), null);
+                                _this[ctrlPropertyName] = lastValue = directiveScope.$eval(attrs[attrName]);
+                                var unwatch = directiveScope.$watch($parse(attrs[attrName], parentValueWatch), null);
                                 onNewScopeDestroyed.push(unwatch);
                                 break;
                         }

@@ -14,17 +14,18 @@ module jasper.core {
                 var onNewScopeDestroyed = [];
                 attributes.forEach((attrBinding:IAttributeBinding) => {
                     var attrName = attrBinding.name;
-                    var ctrlProppertyName = attrBinding.ctrlName || attrName;
+                    var ctrlPropertyName = attrBinding.ctrlName || attrName, lastValue;
+                    var parentValueWatch = (val)=> {
+                        if (val !== lastValue) {
+                            changeCtrlProperty(this, ctrlPropertyName, val);
+                        }
+                        return lastValue = val;
+                    };
                     switch (attrBinding.type) {
                         case 'text':
                             if (!attrs.hasOwnProperty(attrName)) break;
-                            var initValue = $interpolate(attrs[attrName])(directiveScope);
-                            this[ctrlProppertyName] = initValue;
-                            var unbind = attrs.$observe(attrName, (val) => {
-                                if(val !== initValue) {
-                                    changeCtrlProperty(this, ctrlProppertyName, val);
-                                }
-                            });
+                            this[ctrlPropertyName] = lastValue = $interpolate(attrs[attrName])(directiveScope);
+                            var unbind = attrs.$observe(attrName, parentValueWatch);
                             onNewScopeDestroyed.push(unbind);
                             break;
                         case 'expr':
@@ -45,22 +46,14 @@ module jasper.core {
                                     return parentGet(directiveScope, locals);
                                 };
                             }
-                            this[ctrlProppertyName] = attrBinding.$$eventEmitter ?
+                            this[ctrlPropertyName] = attrBinding.$$eventEmitter ?
                                 new EventEmitter(eventFn) : eventFn;
 
                             break;
                         default:
                             if (!attrs.hasOwnProperty(attrName)) break;
-
-                            var initBindingValue = directiveScope.$eval(attrs[attrName]);
-                            this[ctrlProppertyName] = initBindingValue;
-                            var unwatch = directiveScope.$watch($parse(attrs[attrName], (val) => {
-                                // detect change after initial setup
-                                if(val !== initBindingValue) {
-                                    changeCtrlProperty(this, ctrlProppertyName, val);
-                                }
-                                return val;
-                            }), null);
+                            this[ctrlPropertyName] = lastValue = directiveScope.$eval(attrs[attrName]);
+                            var unwatch = directiveScope.$watch($parse(attrs[attrName], parentValueWatch), null);
                             onNewScopeDestroyed.push(unwatch);
                             break;
                     }
