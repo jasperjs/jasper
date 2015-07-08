@@ -19,8 +19,8 @@ module jasper.core {
                         case 'text':
                             if (!attrs.hasOwnProperty(attrName)) break;
                             this[ctrlProppertyName] = $interpolate(attrs[attrName])(directiveScope);
-                            var unbind = attrs.$observe(attrName, (val, oldVal) => {
-                                changeCtrlProperty(this, ctrlProppertyName, val, oldVal);
+                            var unbind = attrs.$observe(attrName, (val) => {
+                                changeCtrlProperty(this, ctrlProppertyName, val);
                             });
                             onNewScopeDestroyed.push(unbind);
                             break;
@@ -51,9 +51,10 @@ module jasper.core {
 
                             var attrValue = directiveScope.$eval(attrs[attrName]);
                             this[ctrlProppertyName] = attrValue;
-                            var unwatch = directiveScope.$watch(attrs[attrName], (val, oldVal) => {
-                                changeCtrlProperty(this, ctrlProppertyName, val, oldVal);
-                            });
+                            var unwatch = directiveScope.$watch($parse(attrs[attrName], (val) => {
+                                changeCtrlProperty(this, ctrlProppertyName, val);
+                                return val;
+                            }), null);
                             onNewScopeDestroyed.push(unwatch);
                             break;
                     }
@@ -108,9 +109,10 @@ module jasper.core {
         return result;
     }
 
-    function changeCtrlProperty(ctrl:any, propertyName:string, newValue:any, oldValue:any) {
-        if (newValue === oldValue && newValue === ctrl[propertyName])
+    function changeCtrlProperty(ctrl:any, propertyName:string, newValue:any) {
+        if (newValue === ctrl[propertyName])
             return; // do not pass property id it does not change
+        var oldValue = ctrl[propertyName];
         ctrl[propertyName] = newValue;
         var methodName = propertyName + '_change';
         if (ctrl[methodName]) {
