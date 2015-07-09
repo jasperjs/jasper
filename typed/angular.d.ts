@@ -687,6 +687,7 @@ declare module ng {
     ///////////////////////////////////////////////////////////////////////////
     interface IParseService {
         (expression: string): ICompiledExpression;
+        (expression: string, interceptorFn: Function): ICompiledExpression;
     }
 
     interface IParseProvider {

@@ -148,9 +148,10 @@
                 if (def.events) {
                     for (var i = 0; i < def.events.length; i++) {
                         var eventName = def.events[i];
+                        var ctrlName = this.camelCaseTagName(eventName);
                         result.push({
                             name: 'on-' + eventName,
-                            ctrlName: eventName,
+                            ctrlName: ctrlName,
                             type: 'expr',
                             // indicates that we need to create EventEmitter class to component's property
                             $$eventEmitter: true

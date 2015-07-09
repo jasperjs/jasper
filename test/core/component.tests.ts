@@ -271,7 +271,7 @@ describe('Jasper component', () => {
         expect(oldValue).toEqual('test');
     }));
 
-    it('should create bindings for properties', inject(($compile, $rootScope) => {
+    it('should create bindings for properties and events', inject(($compile, $rootScope) => {
 
         var instance;
         var component = function() { instance = this; };
@@ -280,19 +280,19 @@ describe('Jasper component', () => {
             name: 'myComponent',
             ctrl: component,
             properties:['myColor','otherColor'],
-            events: ['click'],
+            events: ['my-click'],
             template: '<p>hello {{vm.myColor}}</p>'
         };
         registerDefinitionObject(definition);
         var scope = $rootScope.$new();
         scope.property = 'otherColorTest';
-        $compile('<my-component my-color="test" on-click="someMethod()" bind-other-color="property"></my-component>')(scope);
+        $compile('<my-component my-color="test" on-my-click="someMethod()" bind-other-color="property"></my-component>')(scope);
 
         expect(instance.myColor).toEqual('test');
         expect(instance.otherColor).toEqual(scope.property);
 
-        expect(instance.click).toBeDefined(); //
-        expect(instance.click instanceof jasper.core.EventEmitter).toBeTruthy();
+        expect(instance.myClick).toBeDefined();
+        expect(instance.myClick instanceof jasper.core.EventEmitter).toBeTruthy();
     }));
 
     it('should ignore attributes property if properties or events specified', inject(($compile, $rootScope) => {
@@ -314,6 +314,30 @@ describe('Jasper component', () => {
         $compile('<my-component on-click="someMethod()" some-attr="\'test\'"></my-component>')(scope);
 
         expect(instance.someAttr).toBeUndefined();
+    }));
+
+    it('should be able to setup properties if it is not defined at parent level', inject(($compile, $rootScope) => {
+
+        var instance;
+        // test component
+        var component = function() {
+            this.color='blue';
+            this.title='hello world';
+            instance = this;
+        };
+
+        var definition: jasper.core.IHtmlComponentDefinition = {
+            name: 'myComponent',
+            ctrl: component,
+            properties:['color', 'title'],
+            template: '<p>hello {{vm.myColor}}</p>'
+        };
+        registerDefinitionObject(definition);
+        var scope = $rootScope.$new();
+        $compile('<my-component color="red" bind-title="undefProp"></my-component>')(scope);
+        scope.$digest();
+        expect(instance.color).toEqual('blue');
+        expect(instance.title).toEqual('hello world');
     }));
 
 
@@ -367,9 +391,15 @@ describe('Jasper component', () => {
         };
         registerDefinitionObject(definition);
         var scope = $rootScope.$new();
-        $compile('<my-component #bind-to="component"></my-component>')(scope);
+        var boundInvoked = false, boundComponent;
+        scope.onBound = () => {
+            boundComponent = scope.component;
+            boundInvoked = true;
+        };
+        $compile('<my-component #on-bound="onBound()" #bind-to="component"></my-component>')(scope);
 
-        expect(scope.component.name).toEqual('some component');
+        expect(boundInvoked).toBe(true);
+        expect(boundComponent.name).toEqual('some component');
 
         scope.$destroy();
         expect(scope.component).toBeUndefined();

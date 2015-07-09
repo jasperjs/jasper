@@ -44,6 +44,9 @@ module jasper.core {
             if (isolateScope && attrs.hasOwnProperty('#bindTo')) {
                 var expr = $parse(attrs['#bindTo']);
                 expr.assign(directiveScope, ctrl);
+                if (attrs.hasOwnProperty('#onBound')) {
+                    directiveScope.$eval(attrs['#onBound']);
+                }
                 //remove reference after scope destroyed
                 scope.$on('$destroy', ()=> {
                     expr.assign(directiveScope, undefined);
@@ -65,14 +68,18 @@ module jasper.core {
                            onDestroyPool:Function[]) {
 
         var attrName = attrBinding.name;
-        var ctrlProppertyName = attrBinding.ctrlName || attrName;
+        var ctrlPropertyName = attrBinding.ctrlName || attrName, lastValue;
+        var parentValueWatch = (val)=> {
+            if (val !== lastValue) {
+                changeCtrlProperty(ctrl, ctrlPropertyName, val);
+            }
+            return lastValue = val;
+        };
         switch (attrBinding.type) {
             case 'text':
                 if (!attrs.hasOwnProperty(attrName)) break;
-                ctrl[ctrlProppertyName] = $interpolate(attrs[attrName])(directiveScope);
-                var unbind = attrs.$observe(attrName, (val, oldVal) => {
-                    changeCtrlProperty(ctrl, ctrlProppertyName, val, oldVal);
-                });
+                ctrl[ctrlPropertyName] = lastValue = $interpolate(attrs[attrName])(directiveScope);
+                var unbind = attrs.$observe(attrName, parentValueWatch);
                 onDestroyPool.push(unbind);
                 break;
             case 'expr':
@@ -93,21 +100,18 @@ module jasper.core {
                         return parentGet(directiveScope, locals);
                     };
                 }
-                ctrl[ctrlProppertyName] = attrBinding.$$eventEmitter ?
+                ctrl[ctrlPropertyName] = attrBinding.$$eventEmitter ?
                     new EventEmitter(eventFn) : eventFn;
 
                 break;
             default:
                 if (!attrs.hasOwnProperty(attrName)) break;
-
-                var attrValue = directiveScope.$eval(attrs[attrName]);
-                ctrl[ctrlProppertyName] = attrValue;
-                var unwatch = directiveScope.$watch(attrs[attrName], (val, oldVal) => {
-                    changeCtrlProperty(ctrl, ctrlProppertyName, val, oldVal);
-                });
+                ctrl[ctrlPropertyName] = lastValue = directiveScope.$eval(attrs[attrName]);
+                var unwatch = directiveScope.$watch($parse(attrs[attrName], parentValueWatch), null);
                 onDestroyPool.push(unwatch);
                 break;
         }
+
     }
 
     function camelCaseBindings(bindings:IAttributeBinding[], utility:IUtilityService) {
@@ -125,9 +129,10 @@ module jasper.core {
         return result;
     }
 
-    function changeCtrlProperty(ctrl:any, propertyName:string, newValue:any, oldValue:any) {
-        if (newValue === oldValue)
+    function changeCtrlProperty(ctrl:any, propertyName:string, newValue:any) {
+        if (newValue === ctrl[propertyName])
             return; // do not pass property id it does not change
+        var oldValue = ctrl[propertyName];
         ctrl[propertyName] = newValue;
         var methodName = propertyName + '_change';
         if (ctrl[methodName]) {
