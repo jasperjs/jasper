@@ -11,8 +11,6 @@ module jasper.core {
             var ctrl = this;
             ctrl.$$scope = scope;
 
-            // component ctor invocation:
-            ctor.apply(ctrl, Array.prototype.slice.call(arguments, additionalInjectables.length, arguments.length));
             var directiveScope = isolateScope ? scope.$parent : scope;
 
             var onNewScopeDestroyed = [];
@@ -21,6 +19,11 @@ module jasper.core {
                 for (var i = 0; i < attributes.length; i++) {
                     bindAttribute(ctrl, attributes[i], directiveScope, attrs, $parse, $interpolate, onNewScopeDestroyed);
                 }
+            }
+            // component ctor invocation:
+            ctor.apply(ctrl, Array.prototype.slice.call(arguments, additionalInjectables.length, arguments.length));
+            if (ctrl.initializeComponent) {
+                ctrl.initializeComponent.call(ctrl);
             }
             // subscribe on scope destroying:
             var onDestroy = function () {

@@ -156,17 +156,6 @@ var jasper;
                 if (ddo.controller) {
                     ddo.compile = function () {
                         return {
-                            pre: function (scope, element, attrs, controllers) {
-                                var ctrls = _this.utility.getComponentControllers(controllers, ddo);
-                                if (ctrls.main.initializeComponent)
-                                    ctrls.main.initializeComponent.call(ctrls.main);
-                                if (ctrls.main.destroyComponent) {
-                                    scope.$on('$destroy', function () {
-                                        ctrls.main.destroyComponent.call(ctrls.main);
-                                        ctrls.main.$$scope = null;
-                                    });
-                                }
-                            },
                             post: function (scope, element, attrs, controllers, tranclude) {
                                 var ctrls = _this.utility.getComponentControllers(controllers, ddo);
                                 if (ctrls.main.link) {
@@ -311,7 +300,6 @@ var jasper;
                 directive.require = this.getRequirementsForComponent(def);
                 directive.link = function (scope, element, attrs, controllers) {
                     var ctrls = _this.utility.getComponentControllers(controllers, directive);
-                    ctrls.main.$$scope = scope;
                     var attrExpr = attrs[def.name];
                     var evl = angular.isDefined(def.eval) ? def.eval : true;
                     var value = undefined;
@@ -326,17 +314,11 @@ var jasper;
                             ctrls.main.onValueChanged(newValue, oldValue);
                         });
                     }
-                    var hasDestroyLifecycle = ctrls.main.destroyComponent && angular.isFunction(ctrls.main.destroyComponent);
-                    // when element is destroyed - invoke component method
-                    element.on('$destroy', function () {
-                        if (hasDestroyLifecycle) {
-                            ctrls.main.destroyComponent();
-                        }
-                        if (onValueChangedBinding) {
+                    if (onValueChangedBinding) {
+                        element.on('$destroy', function () {
                             onValueChangedBinding();
-                        }
-                        ctrls.main.$$scope = null;
-                    });
+                        });
+                    }
                 };
                 return directive;
             };
@@ -621,79 +603,44 @@ var jasper;
             var wrapperInject = additionalInjectables.concat(ctor.$inject || []);
             var attributes = camelCaseBindings(bindings, utility);
             var wrapper = function JasperComponentWrapper(scope, $element, attrs, $parse, $interpolate) {
-                var _this = this;
-                this.$$scope = scope;
+                var ctrl = this;
+                ctrl.$$scope = scope;
                 var directiveScope = isolateScope ? scope.$parent : scope;
+                var onNewScopeDestroyed = [];
+                // bind attributes to the component
                 if (attributes.length) {
-                    var onNewScopeDestroyed = [];
-                    attributes.forEach(function (attrBinding) {
-                        var attrName = attrBinding.name;
-                        var ctrlPropertyName = attrBinding.ctrlName || attrName, lastValue;
-                        var parentValueWatch = function (val) {
-                            if (val !== lastValue) {
-                                changeCtrlProperty(_this, ctrlPropertyName, val);
-                            }
-                            return lastValue = val;
-                        };
-                        switch (attrBinding.type) {
-                            case 'text':
-                                if (!attrs.hasOwnProperty(attrName))
-                                    break;
-                                _this[ctrlPropertyName] = lastValue = $interpolate(attrs[attrName])(directiveScope);
-                                var unbind = attrs.$observe(attrName, parentValueWatch);
-                                onNewScopeDestroyed.push(unbind);
-                                break;
-                            case 'expr':
-                            case 'event':
-                                // Don't assign Object.prototype method to scope
-                                var eventFn;
-                                if (!attrs.hasOwnProperty(attrName)) {
-                                    eventFn = angular.noop;
-                                }
-                                else {
-                                    var parentGet = null;
-                                    eventFn = function (locals) {
-                                        if (!parentGet) {
-                                            parentGet = $parse(attrs[attrName]);
-                                        }
-                                        if (parentGet === angular.noop) {
-                                            return;
-                                        }
-                                        return parentGet(directiveScope, locals);
-                                    };
-                                }
-                                _this[ctrlPropertyName] = attrBinding.$$eventEmitter ? new core.EventEmitter(eventFn) : eventFn;
-                                break;
-                            default:
-                                if (!attrs.hasOwnProperty(attrName))
-                                    break;
-                                _this[ctrlPropertyName] = lastValue = directiveScope.$eval(attrs[attrName]);
-                                var unwatch = directiveScope.$watch($parse(attrs[attrName], parentValueWatch), null);
-                                onNewScopeDestroyed.push(unwatch);
-                                break;
-                        }
-                    });
-                    if (onNewScopeDestroyed.length) {
-                        var unbindWatchers = function () {
-                            for (var i = 0; i < onNewScopeDestroyed.length; i++) {
-                                onNewScopeDestroyed[i]();
-                            }
-                            onNewScopeDestroyed = null;
-                        };
-                        if (isolateScope) {
-                            scope.$on('$destroy', unbindWatchers);
-                        }
-                        else {
-                            $element.on('$destroy', unbindWatchers);
-                        }
+                    for (var i = 0; i < attributes.length; i++) {
+                        bindAttribute(ctrl, attributes[i], directiveScope, attrs, $parse, $interpolate, onNewScopeDestroyed);
                     }
                 }
                 // component ctor invocation:
-                ctor.apply(this, Array.prototype.slice.call(arguments, additionalInjectables.length, arguments.length));
+                ctor.apply(ctrl, Array.prototype.slice.call(arguments, additionalInjectables.length, arguments.length));
+                if (ctrl.initializeComponent) {
+                    ctrl.initializeComponent.call(ctrl);
+                }
+                // subscribe on scope destroying:
+                var onDestroy = function () {
+                    if (onNewScopeDestroyed.length) {
+                        for (var i = 0; i < onNewScopeDestroyed.length; i++) {
+                            onNewScopeDestroyed[i]();
+                        }
+                    }
+                    if (angular.isDefined(ctrl.destroyComponent)) {
+                        ctrl.destroyComponent();
+                    }
+                    onNewScopeDestroyed = null;
+                    ctrl.$$scope = null;
+                };
+                if (isolateScope) {
+                    scope.$on('$destroy', function () { return onDestroy(); });
+                }
+                else {
+                    $element.on('$destroy', function () { return onDestroy(); });
+                }
                 // #bind-to syntax
                 if (isolateScope && attrs.hasOwnProperty('#bindTo')) {
                     var expr = $parse(attrs['#bindTo']);
-                    expr.assign(directiveScope, this);
+                    expr.assign(directiveScope, ctrl);
                     if (attrs.hasOwnProperty('#onBound')) {
                         directiveScope.$eval(attrs['#onBound']);
                     }
@@ -702,13 +649,60 @@ var jasper;
                         expr.assign(directiveScope, undefined);
                     });
                 }
-                return this;
+                return ctrl;
             };
             wrapper.prototype = ctor.prototype;
             wrapper.$inject = wrapperInject;
             return wrapper;
         }
         core.JasperDirectiveWrapperFactory = JasperDirectiveWrapperFactory;
+        function bindAttribute(ctrl, attrBinding, directiveScope, attrs, $parse, $interpolate, onDestroyPool) {
+            var attrName = attrBinding.name;
+            var ctrlPropertyName = attrBinding.ctrlName || attrName, lastValue;
+            var parentValueWatch = function (val) {
+                if (val !== lastValue) {
+                    changeCtrlProperty(ctrl, ctrlPropertyName, val);
+                }
+                return lastValue = val;
+            };
+            switch (attrBinding.type) {
+                case 'text':
+                    if (!attrs.hasOwnProperty(attrName))
+                        break;
+                    ctrl[ctrlPropertyName] = lastValue = $interpolate(attrs[attrName])(directiveScope);
+                    var unbind = attrs.$observe(attrName, parentValueWatch);
+                    onDestroyPool.push(unbind);
+                    break;
+                case 'expr':
+                case 'event':
+                    // Don't assign Object.prototype method to scope
+                    var eventFn;
+                    if (!attrs.hasOwnProperty(attrName)) {
+                        eventFn = angular.noop;
+                    }
+                    else {
+                        var parentGet = null;
+                        eventFn = function (locals) {
+                            if (!parentGet) {
+                                parentGet = $parse(attrs[attrName]);
+                            }
+                            if (parentGet === angular.noop) {
+                                return;
+                            }
+                            return parentGet(directiveScope, locals);
+                        };
+                    }
+                    ctrl[ctrlPropertyName] = attrBinding.$$eventEmitter ? new core.EventEmitter(eventFn) : eventFn;
+                    break;
+                default:
+                    if (!attrs.hasOwnProperty(attrName))
+                        break;
+                    ctrl[ctrlPropertyName] = lastValue = directiveScope.$eval(attrs[attrName]);
+                    var unwatch = directiveScope.$watch($parse(attrs[attrName], parentValueWatch), null);
+                    onDestroyPool.push(unwatch);
+                    break;
+            }
+        }
         function camelCaseBindings(bindings, utility) {
             if (!bindings.length)
                 return bindings;

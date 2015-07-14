@@ -16,11 +16,6 @@
             if (ddo.controller) {
                 ddo.compile = () => {
                     return {
-                        pre: (scope:ng.IScope, element:any, attrs:ng.IAttributes, controllers:any) => {
-                            var ctrls = this.utility.getComponentControllers(controllers, ddo);
-                            if (ctrls.main.initializeComponent)
-                                ctrls.main.initializeComponent.call(ctrls.main);
-                        },
                         post: (scope:ng.IScope, element:any, attrs:ng.IAttributes, controllers:any, tranclude:any) => {
                             var ctrls = this.utility.getComponentControllers(controllers, ddo);
                             if (ctrls.main.link) {

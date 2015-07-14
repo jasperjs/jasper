@@ -29,7 +29,6 @@
 
             directive.link = (scope:ng.IScope, element:JQuery, attrs:ng.IAttributes, controllers:any) => {
                 var ctrls = this.utility.getComponentControllers(controllers, directive);
-                ctrls.main.$$scope = scope;
 
                 var attrExpr = attrs[def.name];
                 var evl = angular.isDefined(def.eval) ? def.eval : true;
