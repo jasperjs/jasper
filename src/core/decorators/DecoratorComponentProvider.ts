@@ -18,7 +18,7 @@
         }
 
         $get() {
-            return {};
+            return this.decoratorRegistar;
         }
     }
 }

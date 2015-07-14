@@ -4,6 +4,7 @@
 
         private directive:(name:string, directiveFactory:Function) => ng.ICompileProvider;
         private utility:IUtilityService;
+        private interceptor:IDirectiveInterceptor;
 
         constructor(compileProvider:ng.ICompileProvider) {
             this.directive = compileProvider.directive;
@@ -14,6 +15,11 @@
             var ddo = this.createDirectiveFor(component);
             this.directive(component.name, () => ddo);
         }
+
+        setInterceptor(interceptor:IDirectiveInterceptor) {
+            this.interceptor = interceptor;
+        }
+
 
         private createDirectiveFor(def:IHtmlDecoratorDefinition):ng.IDirective {
             var directive:ng.IDirective = {
@@ -27,36 +33,47 @@
             directive.controller = JasperDirectiveWrapperFactory(ctrl, this.utility.extractAttributeBindings(def), this.utility, false);
             directive.require = this.getRequirementsForComponent(def);
 
-            directive.link = (scope:ng.IScope, element:JQuery, attrs:ng.IAttributes, controllers:any) => {
-                var ctrls = this.utility.getComponentControllers(controllers, directive);
-
-                var attrExpr = attrs[def.name];
-                var evl = angular.isDefined(def.eval) ? def.eval : true;
-
-                var value = undefined;
-                if (angular.isDefined(attrExpr)) {
-                    value = evl ? scope.$eval(attrExpr) : attrExpr;
+            directive.compile = (tElement:JQuery) => {
+                if (this.interceptor) {
+                    this.interceptor.onCompile(directive, tElement);
                 }
+                return {
+                    post: (scope:ng.IScope, element:JQuery, attrs:ng.IAttributes, controllers:any) => {
+                        var ctrls = this.utility.getComponentControllers(controllers, directive);
 
-                if (ctrls.main.link)
-                    ctrls.main.link(value, element[0], attrs, ctrls.controllersToPass);
+                        var attrExpr = attrs[def.name];
+                        var evl = angular.isDefined(def.eval) ? def.eval : true;
 
-                var onValueChangedBinding;
+                        var value = undefined;
+                        if (angular.isDefined(attrExpr)) {
+                            value = evl ? scope.$eval(attrExpr) : attrExpr;
+                        }
 
-                if (ctrls.main.onValueChanged && attrs.hasOwnProperty(def.name) && evl) {
-                    onValueChangedBinding = scope.$watch(attrExpr, (newValue:any, oldValue:any) => {
-                        ctrls.main.onValueChanged(newValue, oldValue);
-                    });
+                        if (ctrls.main.link)
+                            ctrls.main.link(value, element[0], attrs, ctrls.controllersToPass);
+
+                        var onValueChangedBinding;
+
+                        if (ctrls.main.onValueChanged && attrs.hasOwnProperty(def.name) && evl) {
+                            onValueChangedBinding = scope.$watch(attrExpr, (newValue:any, oldValue:any) => {
+                                ctrls.main.onValueChanged(newValue, oldValue);
+                            });
+                        }
+
+
+                        if (onValueChangedBinding) {
+                            element.on('$destroy', () => {
+                                onValueChangedBinding();
+                            });
+                        }
+
+                        if (this.interceptor) {
+                            this.interceptor.onMount(directive, scope, element);
+                        }
+                    }
                 }
+            }
 
-
-                if (onValueChangedBinding) {
-                    element.on('$destroy', () => {
-                        onValueChangedBinding();
-                    });
-                }
-
-            };
 
             return directive;
         }

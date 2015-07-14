@@ -4,6 +4,7 @@
 
         private directive:(name:string, directiveFactory:Function) => ng.ICompileProvider;
         private utility:IUtilityService;
+        private interceptor:IDirectiveInterceptor;
 
         constructor(compileProvider:ng.ICompileProvider) {
             this.directive = compileProvider.directive;
@@ -14,12 +15,18 @@
             var ddo = this.createDirectiveFor(component);
 
             if (ddo.controller) {
-                ddo.compile = () => {
+                ddo.compile = (tElement:JQuery) => {
+                    if (this.interceptor) {
+                        this.interceptor.onCompile(ddo, tElement);
+                    }
                     return {
                         post: (scope:ng.IScope, element:any, attrs:ng.IAttributes, controllers:any, tranclude:any) => {
                             var ctrls = this.utility.getComponentControllers(controllers, ddo);
                             if (ctrls.main.link) {
                                 ctrls.main.link(element[0], ctrls.controllersToPass, tranclude);
+                            }
+                            if (this.interceptor) {
+                                this.interceptor.onMount(ddo, scope, element);
                             }
                         }
                     }
@@ -27,6 +34,10 @@
             }
 
             this.directive(component.name, () => ddo);
+        }
+
+        setInterceptor(interceptor:IDirectiveInterceptor) {
+            this.interceptor = interceptor;
         }
 
         private getScopeDefinition(def:IHtmlComponentDefinition) {

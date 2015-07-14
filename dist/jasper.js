@@ -154,18 +154,27 @@ var jasper;
                 var _this = this;
                 var ddo = this.createDirectiveFor(component);
                 if (ddo.controller) {
-                    ddo.compile = function () {
+                    ddo.compile = function (tElement) {
+                        if (_this.interceptor) {
+                            _this.interceptor.onCompile(ddo, tElement);
+                        }
                         return {
                             post: function (scope, element, attrs, controllers, tranclude) {
                                 var ctrls = _this.utility.getComponentControllers(controllers, ddo);
                                 if (ctrls.main.link) {
                                     ctrls.main.link(element[0], ctrls.controllersToPass, tranclude);
                                 }
+                                if (_this.interceptor) {
+                                    _this.interceptor.onMount(ddo, scope, element);
+                                }
                             }
                         };
                     };
                 }
                 this.directive(component.name, function () { return ddo; });
+            };
+            HtmlComponentRegistrar.prototype.setInterceptor = function (interceptor) {
+                this.interceptor = interceptor;
             };
             HtmlComponentRegistrar.prototype.getScopeDefinition = function (def) {
                 var scope = {};
@@ -245,7 +254,7 @@ var jasper;
                 this.componentRegistar.register(component);
             };
             ComponentProvider.prototype.$get = function () {
-                return {};
+                return this.componentRegistar;
             };
             ComponentProvider.$inject = ['$compileProvider'];
             return ComponentProvider;
@@ -265,7 +274,7 @@ var jasper;
                 this.decoratorRegistar.register(decorator);
             };
             DecoratorComponentProvider.prototype.$get = function () {
-                return {};
+                return this.decoratorRegistar;
             };
             DecoratorComponentProvider.$inject = ['$compileProvider'];
             return DecoratorComponentProvider;
@@ -286,6 +295,9 @@ var jasper;
                 var ddo = this.createDirectiveFor(component);
                 this.directive(component.name, function () { return ddo; });
             };
+            HtmlDecoratorRegistrar.prototype.setInterceptor = function (interceptor) {
+                this.interceptor = interceptor;
+            };
             HtmlDecoratorRegistrar.prototype.createDirectiveFor = function (def) {
                 var _this = this;
                 var directive = {
@@ -298,27 +310,37 @@ var jasper;
                 }
                 directive.controller = core.JasperDirectiveWrapperFactory(ctrl, this.utility.extractAttributeBindings(def), this.utility, false);
                 directive.require = this.getRequirementsForComponent(def);
-                directive.link = function (scope, element, attrs, controllers) {
-                    var ctrls = _this.utility.getComponentControllers(controllers, directive);
-                    var attrExpr = attrs[def.name];
-                    var evl = angular.isDefined(def.eval) ? def.eval : true;
-                    var value = undefined;
-                    if (angular.isDefined(attrExpr)) {
-                        value = evl ? scope.$eval(attrExpr) : attrExpr;
+                directive.compile = function (tElement) {
+                    if (_this.interceptor) {
+                        _this.interceptor.onCompile(directive, tElement);
                     }
-                    if (ctrls.main.link)
-                        ctrls.main.link(value, element[0], attrs, ctrls.controllersToPass);
-                    var onValueChangedBinding;
-                    if (ctrls.main.onValueChanged && attrs.hasOwnProperty(def.name) && evl) {
-                        onValueChangedBinding = scope.$watch(attrExpr, function (newValue, oldValue) {
-                            ctrls.main.onValueChanged(newValue, oldValue);
-                        });
-                    }
-                    if (onValueChangedBinding) {
-                        element.on('$destroy', function () {
-                            onValueChangedBinding();
-                        });
-                    }
+                    return {
+                        post: function (scope, element, attrs, controllers) {
+                            var ctrls = _this.utility.getComponentControllers(controllers, directive);
+                            var attrExpr = attrs[def.name];
+                            var evl = angular.isDefined(def.eval) ? def.eval : true;
+                            var value = undefined;
+                            if (angular.isDefined(attrExpr)) {
+                                value = evl ? scope.$eval(attrExpr) : attrExpr;
+                            }
+                            if (ctrls.main.link)
+                                ctrls.main.link(value, element[0], attrs, ctrls.controllersToPass);
+                            var onValueChangedBinding;
+                            if (ctrls.main.onValueChanged && attrs.hasOwnProperty(def.name) && evl) {
+                                onValueChangedBinding = scope.$watch(attrExpr, function (newValue, oldValue) {
+                                    ctrls.main.onValueChanged(newValue, oldValue);
+                                });
+                            }
+                            if (onValueChangedBinding) {
+                                element.on('$destroy', function () {
+                                    onValueChangedBinding();
+                                });
+                            }
+                            if (_this.interceptor) {
+                                _this.interceptor.onMount(directive, scope, element);
+                            }
+                        }
+                    };
                 };
                 return directive;
             };
@@ -1159,6 +1181,7 @@ var jasper;
     }]);
 })(jasper || (jasper = {}));
 // CORE
+/// <reference path="core/IDirectiveInterceptor.ts" />
 /// <reference path="core/IComponentControllers.ts" />
 /// <reference path="core/IHtmlRegistrar.ts" />
 /// <reference path="core/UtilityService.ts" />
