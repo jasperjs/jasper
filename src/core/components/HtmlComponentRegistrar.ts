@@ -12,33 +12,63 @@
         }
 
         register(component:IHtmlComponentDefinition) {
-            var ddo = this.createDirectiveFor(component);
-
-            if (ddo.controller) {
-                ddo.compile = (tElement:JQuery) => {
-                    if (this.interceptor) {
-                        this.interceptor.onCompile(ddo, tElement);
-                    }
-                    return {
-                        post: (scope:ng.IScope, element:any, attrs:ng.IAttributes, controllers:any, tranclude:any) => {
-                            var ctrls = this.utility.getComponentControllers(controllers, ddo);
-                            if (ctrls.main.link) {
-                                ctrls.main.link(element[0], ctrls.controllersToPass, tranclude);
-                            }
-                            if (this.interceptor) {
-                                this.interceptor.onMount(ddo, scope, element);
-                            }
-                        }
-                    }
-                };
+            if (this.interceptor) {
+                this.interceptor.onRegister(component);
             }
-
+            var ddo = this.createDirectiveFor(component);
             this.directive(component.name, () => ddo);
         }
 
         setInterceptor(interceptor:IDirectiveInterceptor) {
             this.interceptor = interceptor;
         }
+
+        createDirectiveFor(def:IHtmlComponentDefinition):ng.IDirective {
+            var directive:ng.IDirective = {
+                restrict: 'E'
+            };
+
+            var ctrl = def.ctrl || def.ctor;
+            if (ctrl) {
+                var ctor = this.utility.getFactoryOf(ctrl);
+                directive.controller = JasperDirectiveWrapperFactory(ctor, this.utility.extractAttributeBindings(def), this.utility, true);
+                directive.controllerAs = 'vm';
+                directive.scope = {};
+            } else {
+                directive.scope = this.getScopeDefinition(def);
+            }
+
+            directive.transclude = def.transclude === 'true' ? true : def.transclude;
+            directive.templateUrl = def.templateUrl;
+            directive.replace = def.replace;
+            directive.templateNamespace = def.templateNamespace;
+            if (angular.isDefined(def.template))
+                directive.template = def.template;
+
+            directive.require = this.getRequirementsForComponent(def);
+
+            if (directive.controller) {
+                directive.compile = (tElement:JQuery) => {
+                    if (this.interceptor) {
+                        this.interceptor.onCompile(directive, tElement);
+                    }
+                    return {
+                        post: (scope:ng.IScope, element:any, attrs:ng.IAttributes, controllers:any, tranclude:any) => {
+                            var ctrls = this.utility.getComponentControllers(controllers, directive);
+                            if (ctrls.main.link) {
+                                ctrls.main.link(element[0], ctrls.controllersToPass, tranclude);
+                            }
+                            if (this.interceptor) {
+                                this.interceptor.onMount(directive, scope, element);
+                            }
+                        }
+                    }
+                };
+            }
+
+            return directive;
+        }
+
 
         private getScopeDefinition(def:IHtmlComponentDefinition) {
             var scope = {};
@@ -66,33 +96,6 @@
                 scope[camelCaseAttrName] = angularBinding;
             }
             return scope;
-        }
-
-        private createDirectiveFor(def:IHtmlComponentDefinition):ng.IDirective {
-            var directive:ng.IDirective = {
-                restrict: 'E'
-            };
-
-            var ctrl = def.ctrl || def.ctor;
-            if (ctrl) {
-                var ctor = this.utility.getFactoryOf(ctrl);
-                directive.controller = JasperDirectiveWrapperFactory(ctor, this.utility.extractAttributeBindings(def), this.utility, true);
-                directive.controllerAs = 'vm';
-                directive.scope = {};
-            } else {
-                directive.scope = this.getScopeDefinition(def);
-            }
-
-            directive.transclude = def.transclude === 'true' ? true : def.transclude;
-            directive.templateUrl = def.templateUrl;
-            directive.replace = def.replace;
-            directive.templateNamespace = def.templateNamespace;
-            if (angular.isDefined(def.template))
-                directive.template = def.template;
-
-            directive.require = this.getRequirementsForComponent(def);
-
-            return directive;
         }
 
         private getRequirementsForComponent(component:IHtmlComponentDefinition) {

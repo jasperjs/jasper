@@ -12,6 +12,9 @@
         }
 
         register(component:IHtmlDecoratorDefinition) {
+            if(this.interceptor){
+                this.interceptor.onRegister(component);
+            }
             var ddo = this.createDirectiveFor(component);
             this.directive(component.name, () => ddo);
         }

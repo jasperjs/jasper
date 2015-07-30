@@ -151,30 +151,56 @@ var jasper;
                 this.utility = new core.UtilityService();
             }
             HtmlComponentRegistrar.prototype.register = function (component) {
-                var _this = this;
+                if (this.interceptor) {
+                    this.interceptor.onRegister(component);
+                }
                 var ddo = this.createDirectiveFor(component);
-                if (ddo.controller) {
-                    ddo.compile = function (tElement) {
+                this.directive(component.name, function () { return ddo; });
+            };
+            HtmlComponentRegistrar.prototype.setInterceptor = function (interceptor) {
+                this.interceptor = interceptor;
+            };
+            HtmlComponentRegistrar.prototype.createDirectiveFor = function (def) {
+                var _this = this;
+                var directive = {
+                    restrict: 'E'
+                };
+                var ctrl = def.ctrl || def.ctor;
+                if (ctrl) {
+                    var ctor = this.utility.getFactoryOf(ctrl);
+                    directive.controller = core.JasperDirectiveWrapperFactory(ctor, this.utility.extractAttributeBindings(def), this.utility, true);
+                    directive.controllerAs = 'vm';
+                    directive.scope = {};
+                }
+                else {
+                    directive.scope = this.getScopeDefinition(def);
+                }
+                directive.transclude = def.transclude === 'true' ? true : def.transclude;
+                directive.templateUrl = def.templateUrl;
+                directive.replace = def.replace;
+                directive.templateNamespace = def.templateNamespace;
+                if (angular.isDefined(def.template))
+                    directive.template = def.template;
+                directive.require = this.getRequirementsForComponent(def);
+                if (directive.controller) {
+                    directive.compile = function (tElement) {
                         if (_this.interceptor) {
-                            _this.interceptor.onCompile(ddo, tElement);
+                            _this.interceptor.onCompile(directive, tElement);
                         }
                         return {
                             post: function (scope, element, attrs, controllers, tranclude) {
-                                var ctrls = _this.utility.getComponentControllers(controllers, ddo);
+                                var ctrls = _this.utility.getComponentControllers(controllers, directive);
                                 if (ctrls.main.link) {
                                     ctrls.main.link(element[0], ctrls.controllersToPass, tranclude);
                                 }
                                 if (_this.interceptor) {
-                                    _this.interceptor.onMount(ddo, scope, element);
+                                    _this.interceptor.onMount(directive, scope, element);
                                 }
                             }
                         };
                     };
                 }
-                this.directive(component.name, function () { return ddo; });
-            };
-            HtmlComponentRegistrar.prototype.setInterceptor = function (interceptor) {
-                this.interceptor = interceptor;
+                return directive;
             };
             HtmlComponentRegistrar.prototype.getScopeDefinition = function (def) {
                 var scope = {};
@@ -200,29 +226,6 @@ var jasper;
                     scope[camelCaseAttrName] = angularBinding;
                 }
                 return scope;
-            };
-            HtmlComponentRegistrar.prototype.createDirectiveFor = function (def) {
-                var directive = {
-                    restrict: 'E'
-                };
-                var ctrl = def.ctrl || def.ctor;
-                if (ctrl) {
-                    var ctor = this.utility.getFactoryOf(ctrl);
-                    directive.controller = core.JasperDirectiveWrapperFactory(ctor, this.utility.extractAttributeBindings(def), this.utility, true);
-                    directive.controllerAs = 'vm';
-                    directive.scope = {};
-                }
-                else {
-                    directive.scope = this.getScopeDefinition(def);
-                }
-                directive.transclude = def.transclude === 'true' ? true : def.transclude;
-                directive.templateUrl = def.templateUrl;
-                directive.replace = def.replace;
-                directive.templateNamespace = def.templateNamespace;
-                if (angular.isDefined(def.template))
-                    directive.template = def.template;
-                directive.require = this.getRequirementsForComponent(def);
-                return directive;
             };
             HtmlComponentRegistrar.prototype.getRequirementsForComponent = function (component) {
                 if (angular.isDefined(component.require)) {
@@ -292,6 +295,9 @@ var jasper;
                 this.utility = new core.UtilityService();
             }
             HtmlDecoratorRegistrar.prototype.register = function (component) {
+                if (this.interceptor) {
+                    this.interceptor.onRegister(component);
+                }
                 var ddo = this.createDirectiveFor(component);
                 this.directive(component.name, function () { return ddo; });
             };
@@ -434,7 +440,7 @@ var jasper;
                 this.serviceRegistar.register(serviceDef);
             };
             ServiceProvider.prototype.$get = function () {
-                return {};
+                return this.serviceRegistar;
             };
             ServiceProvider.$inject = ['$provide'];
             return ServiceProvider;
@@ -448,9 +454,13 @@ var jasper;
     (function (core) {
         var ServiceRegistrar = (function () {
             function ServiceRegistrar(provide) {
+                this.provide = provide;
                 this.service = provide.service;
                 this.utility = new core.UtilityService();
             }
+            ServiceRegistrar.prototype.registerFactory = function (name, factory) {
+                this.provide.factory(name, factory);
+            };
             ServiceRegistrar.prototype.register = function (def) {
                 if (!def.ctor) {
                     throw new Error(def.name + ' must specify constructor');

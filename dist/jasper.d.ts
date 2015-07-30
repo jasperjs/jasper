@@ -5,6 +5,11 @@ declare module jasper.core {
      */
     interface IDirectiveInterceptor {
         /**
+         * Invokes when component is registering in the application
+         * @param definition
+         */
+        onRegister(definition: any): any;
+        /**
          * Invokes when during directive template compilation
          * @param directive     directive definition
          * @param tElement      template element
@@ -84,8 +89,8 @@ declare module jasper.core {
         constructor(compileProvider: ng.ICompileProvider);
         register(component: IHtmlComponentDefinition): void;
         setInterceptor(interceptor: IDirectiveInterceptor): void;
+        createDirectiveFor(def: IHtmlComponentDefinition): ng.IDirective;
         private getScopeDefinition(def);
-        private createDirectiveFor(def);
         private getRequirementsForComponent(component);
     }
 }
@@ -394,14 +399,16 @@ declare module jasper.core {
         private serviceRegistar;
         constructor($provide: any);
         register(serviceDef: IServiceDefinition): void;
-        $get(): {};
+        $get(): IHtmlRegistrar<IServiceDefinition>;
     }
 }
 declare module jasper.core {
     class ServiceRegistrar implements IHtmlRegistrar<IServiceDefinition> {
+        private provide;
         private service;
         private utility;
         constructor(provide: any);
+        registerFactory(name: string, factory: Function): void;
         register(def: IServiceDefinition): void;
     }
 }

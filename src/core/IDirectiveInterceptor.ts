@@ -5,6 +5,12 @@ module jasper.core{
      */
     export interface IDirectiveInterceptor {
         /**
+         * Invokes when component is registering in the application
+         * @param definition
+         */
+        onRegister(definition: any);
+
+        /**
          * Invokes when during directive template compilation
          * @param directive     directive definition
          * @param tElement      template element
