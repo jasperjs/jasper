@@ -38,7 +38,7 @@
     }
 
     export class UtilityService implements IUtilityService {
-        getComponentControllers(controllers, directive:ng.IDirective):IComponentControllers {
+        getComponentControllers(controllers:any, directive:ng.IDirective):IComponentControllers {
             var controllersToPass;
             var controller:IHtmlComponent;
 

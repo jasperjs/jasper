@@ -1,6 +1,6 @@
 {
   "name": "jasper",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Client library for jasper application",
   "main": "gruntfile.js",
   "scripts": {

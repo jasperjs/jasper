@@ -91,7 +91,7 @@ declare module jasper.core {
         setInterceptor(interceptor: IDirectiveInterceptor): void;
         createDirectiveFor(def: IHtmlComponentDefinition): ng.IDirective;
         private getScopeDefinition(def);
-        private getRequirementsForComponent(component);
+        private getRequirementsForComponent(component, hasCtrl);
     }
 }
 declare module jasper.core {

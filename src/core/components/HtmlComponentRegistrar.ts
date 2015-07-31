@@ -45,9 +45,9 @@
             if (angular.isDefined(def.template))
                 directive.template = def.template;
 
-            directive.require = this.getRequirementsForComponent(def);
+            directive.require = this.getRequirementsForComponent(def, !!directive.controller);
 
-            if (directive.controller) {
+            if (directive.controller || this.interceptor) {
                 directive.compile = (tElement:JQuery) => {
                     if (this.interceptor) {
                         this.interceptor.onCompile(directive, tElement);
@@ -55,7 +55,7 @@
                     return {
                         post: (scope:ng.IScope, element:any, attrs:ng.IAttributes, controllers:any, tranclude:any) => {
                             var ctrls = this.utility.getComponentControllers(controllers, directive);
-                            if (ctrls.main.link) {
+                            if (ctrls.main && ctrls.main.link) {
                                 ctrls.main.link(element[0], ctrls.controllersToPass, tranclude);
                             }
                             if (this.interceptor) {
@@ -98,9 +98,12 @@
             return scope;
         }
 
-        private getRequirementsForComponent(component:IHtmlComponentDefinition) {
+        private getRequirementsForComponent(component:IHtmlComponentDefinition, hasCtrl:boolean) {
             if (angular.isDefined(component.require)) {
-                var req = [component.name];
+                var req = [];
+                if (hasCtrl) {
+                    req.push(component.name);
+                }
                 if (angular.isArray(component.require))
                     req = req.concat(component.require);
                 else
@@ -108,7 +111,7 @@
 
                 return <any>req;
             } else {
-                return component.name;
+                return hasCtrl ? component.name : undefined;
             }
         }
 

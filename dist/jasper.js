@@ -181,8 +181,8 @@ var jasper;
                 directive.templateNamespace = def.templateNamespace;
                 if (angular.isDefined(def.template))
                     directive.template = def.template;
-                directive.require = this.getRequirementsForComponent(def);
-                if (directive.controller) {
+                directive.require = this.getRequirementsForComponent(def, !!directive.controller);
+                if (directive.controller || this.interceptor) {
                     directive.compile = function (tElement) {
                         if (_this.interceptor) {
                             _this.interceptor.onCompile(directive, tElement);
@@ -190,7 +190,7 @@ var jasper;
                         return {
                             post: function (scope, element, attrs, controllers, tranclude) {
                                 var ctrls = _this.utility.getComponentControllers(controllers, directive);
-                                if (ctrls.main.link) {
+                                if (ctrls.main && ctrls.main.link) {
                                     ctrls.main.link(element[0], ctrls.controllersToPass, tranclude);
                                 }
                                 if (_this.interceptor) {
@@ -227,9 +227,12 @@ var jasper;
                 }
                 return scope;
             };
-            HtmlComponentRegistrar.prototype.getRequirementsForComponent = function (component) {
+            HtmlComponentRegistrar.prototype.getRequirementsForComponent = function (component, hasCtrl) {
                 if (angular.isDefined(component.require)) {
-                    var req = [component.name];
+                    var req = [];
+                    if (hasCtrl) {
+                        req.push(component.name);
+                    }
                     if (angular.isArray(component.require))
                         req = req.concat(component.require);
                     else
@@ -237,7 +240,7 @@ var jasper;
                     return req;
                 }
                 else {
-                    return component.name;
+                    return hasCtrl ? component.name : undefined;
                 }
             };
             return HtmlComponentRegistrar;
