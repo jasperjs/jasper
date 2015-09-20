@@ -1,27 +1,38 @@
 declare module jasper.core {
     /**
+     * Data structure for jDebug
+     */
+    interface IJDebugInfo {
+        /**
+         * System path to the component/service etc.
+         */
+        path: string;
+    }
+}
+declare module jasper.core {
+    /**
      * Interface allow to extend jasper application
      * Uses by jDebug tools for live reloding application components
      */
-    interface IDirectiveInterceptor {
+    interface IDirectiveInterceptor<T> {
         /**
          * Invokes when component is registering in the application
          * @param definition
          */
-        onRegister(definition: any): any;
+        onRegister(definition: T): any;
         /**
          * Invokes when during directive template compilation
          * @param directive     directive definition
          * @param tElement      template element
          */
-        onCompile(directive: ng.IDirective, tElement: JQuery): any;
+        onCompile(directive: ng.IDirective, tElement: JQuery, definition: T): any;
         /**
          * Invokes when application create component instance over DOM element
          * @param directive     directive definition
          * @param scope         angular scope for directive
          * @param iElement      directive DOM node
          */
-        onMount(directive: ng.IDirective, scope: ng.IScope, iElement: JQuery): any;
+        onMount(directive: ng.IDirective, scope: ng.IScope, iElement: JQuery, definition: T): any;
     }
 }
 declare module jasper.core {
@@ -68,7 +79,7 @@ declare module jasper.core {
          * @param events            array of string. Represent events of the component: ['statusChanged']
          */
         fetchAttributeBindings(properties?: any, events?: string[]): IAttributeBinding[];
-        extractAttributeBindings(def: IHtmlComponentDefinition): IAttributeBinding[];
+        extractAttributeBindings(def: IHtmlComponentDefinition | IHtmlDecoratorDefinition): IAttributeBinding[];
     }
     class UtilityService implements IUtilityService {
         getComponentControllers(controllers: any, directive: ng.IDirective): IComponentControllers;
@@ -77,7 +88,7 @@ declare module jasper.core {
         camelCase(source: string): string;
         camelCaseTagName(tagName: string): string;
         fetchAttributeBindings(properties?: any, events?: string[]): IAttributeBinding[];
-        extractAttributeBindings(def: IHtmlComponentDefinition): IAttributeBinding[];
+        extractAttributeBindings(def: IHtmlComponentDefinition | IHtmlDecoratorDefinition): IAttributeBinding[];
         private getter(obj, path);
     }
 }
@@ -88,7 +99,7 @@ declare module jasper.core {
         private interceptor;
         constructor(compileProvider: ng.ICompileProvider);
         register(component: IHtmlComponentDefinition): void;
-        setInterceptor(interceptor: IDirectiveInterceptor): void;
+        setInterceptor(interceptor: IDirectiveInterceptor<IHtmlComponentDefinition>): void;
         createDirectiveFor(def: IHtmlComponentDefinition): ng.IDirective;
         private getScopeDefinition(def);
         private getRequirementsForComponent(component, hasCtrl);
@@ -247,6 +258,10 @@ declare module jasper.core {
          */
         require?: any;
         templateNamespace?: string;
+        /**
+         * Infomation for jDebug
+         */
+        jDebug?: IJDebugInfo;
     }
 }
 declare module jasper.core {
@@ -268,7 +283,7 @@ declare module jasper.core {
         private interceptor;
         constructor(compileProvider: ng.ICompileProvider);
         register(component: IHtmlDecoratorDefinition): void;
-        setInterceptor(interceptor: IDirectiveInterceptor): void;
+        setInterceptor(interceptor: IDirectiveInterceptor<IHtmlDecoratorDefinition>): void;
         private createDirectiveFor(def);
         private getRequirementsForComponent(component);
         private getComponentControllers(controllers, directive);
@@ -344,6 +359,10 @@ declare module jasper.core {
          * <element decorator on-change="someMethod()"></element>
          */
         events?: string[];
+        /**
+         * Infomation for jDebug
+         */
+        jDebug?: IJDebugInfo;
     }
 }
 declare module jasper.core {

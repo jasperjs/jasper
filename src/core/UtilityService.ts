@@ -34,7 +34,7 @@
          */
         fetchAttributeBindings(properties?:any, events?:string[]):IAttributeBinding[];
 
-        extractAttributeBindings(def:IHtmlComponentDefinition):IAttributeBinding[];
+        extractAttributeBindings(def:IHtmlComponentDefinition|IHtmlDecoratorDefinition):IAttributeBinding[];
     }
 
     export class UtilityService implements IUtilityService {
@@ -124,7 +124,7 @@
             return attributes;
         }
 
-        extractAttributeBindings(def:IHtmlComponentDefinition):IAttributeBinding[] {
+        extractAttributeBindings(def:IHtmlComponentDefinition|IHtmlDecoratorDefinition):IAttributeBinding[] {
             if (def.properties || def.events) {
                 var result:IAttributeBinding[] = [];
                 // create properties bindings:
@@ -160,7 +160,7 @@
                 }
                 return result;
             } else {
-                return def.attributes || [];
+                return def['attributes'] || [];
             }
         }
 

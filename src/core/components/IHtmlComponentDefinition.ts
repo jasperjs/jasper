@@ -80,7 +80,11 @@
          */
         require?: any;
 
-
         templateNamespace?: string;
+
+        /**
+         * Infomation for jDebug
+         */
+        jDebug?: IJDebugInfo;
     }
 } 

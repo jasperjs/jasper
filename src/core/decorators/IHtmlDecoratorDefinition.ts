@@ -50,5 +50,9 @@
          */
         events?: string[];
 
+        /**
+         * Infomation for jDebug
+         */
+        jDebug?: IJDebugInfo;
     }
 } 

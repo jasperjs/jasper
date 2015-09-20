@@ -1,5 +1,6 @@
 ﻿// CORE
 
+/// <reference path="core/IJDebugInfo.ts" />
 /// <reference path="core/IDirectiveInterceptor.ts" />
 /// <reference path="core/IComponentControllers.ts" />
 /// <reference path="core/IHtmlRegistrar.ts" />

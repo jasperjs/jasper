@@ -121,7 +121,7 @@ var jasper;
                     return result;
                 }
                 else {
-                    return def.attributes || [];
+                    return def['attributes'] || [];
                 }
             };
             UtilityService.prototype.getter = function (obj, path) {
@@ -185,7 +185,7 @@ var jasper;
                 if (directive.controller || this.interceptor) {
                     directive.compile = function (tElement) {
                         if (_this.interceptor) {
-                            _this.interceptor.onCompile(directive, tElement);
+                            _this.interceptor.onCompile(directive, tElement, def);
                         }
                         return {
                             post: function (scope, element, attrs, controllers, tranclude) {
@@ -194,7 +194,7 @@ var jasper;
                                     ctrls.main.link(element[0], ctrls.controllersToPass, tranclude);
                                 }
                                 if (_this.interceptor) {
-                                    _this.interceptor.onMount(directive, scope, element);
+                                    _this.interceptor.onMount(directive, scope, element, def);
                                 }
                             }
                         };
@@ -321,7 +321,7 @@ var jasper;
                 directive.require = this.getRequirementsForComponent(def);
                 directive.compile = function (tElement) {
                     if (_this.interceptor) {
-                        _this.interceptor.onCompile(directive, tElement);
+                        _this.interceptor.onCompile(directive, tElement, def);
                     }
                     return {
                         post: function (scope, element, attrs, controllers) {
@@ -346,7 +346,7 @@ var jasper;
                                 });
                             }
                             if (_this.interceptor) {
-                                _this.interceptor.onMount(directive, scope, element);
+                                _this.interceptor.onMount(directive, scope, element, def);
                             }
                         }
                     };
@@ -1194,6 +1194,7 @@ var jasper;
     }]);
 })(jasper || (jasper = {}));
 // CORE
+/// <reference path="core/IJDebugInfo.ts" />
 /// <reference path="core/IDirectiveInterceptor.ts" />
 /// <reference path="core/IComponentControllers.ts" />
 /// <reference path="core/IHtmlRegistrar.ts" />

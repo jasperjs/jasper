@@ -4,7 +4,7 @@
 
         private directive:(name:string, directiveFactory:Function) => ng.ICompileProvider;
         private utility:IUtilityService;
-        private interceptor:IDirectiveInterceptor;
+        private interceptor:IDirectiveInterceptor<IHtmlDecoratorDefinition>;
 
         constructor(compileProvider:ng.ICompileProvider) {
             this.directive = compileProvider.directive;
@@ -19,7 +19,7 @@
             this.directive(component.name, () => ddo);
         }
 
-        setInterceptor(interceptor:IDirectiveInterceptor) {
+        setInterceptor(interceptor:IDirectiveInterceptor<IHtmlDecoratorDefinition>) {
             this.interceptor = interceptor;
         }
 
@@ -38,7 +38,7 @@
 
             directive.compile = (tElement:JQuery) => {
                 if (this.interceptor) {
-                    this.interceptor.onCompile(directive, tElement);
+                    this.interceptor.onCompile(directive, tElement, def);
                 }
                 return {
                     post: (scope:ng.IScope, element:JQuery, attrs:ng.IAttributes, controllers:any) => {
@@ -71,7 +71,7 @@
                         }
 
                         if (this.interceptor) {
-                            this.interceptor.onMount(directive, scope, element);
+                            this.interceptor.onMount(directive, scope, element, def);
                         }
                     }
                 }
