@@ -39,6 +39,7 @@
                 }
 
                 routeConf['prerender'] = route.prerender;
+                routeConf['name'] = route.name;
 
                 this.routeProvider.when(path, routeConf);
             });

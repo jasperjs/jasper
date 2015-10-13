@@ -1105,6 +1105,7 @@ var jasper;
                         };
                     }
                     routeConf['prerender'] = route.prerender;
+                    routeConf['name'] = route.name;
                     _this.routeProvider.when(path, routeConf);
                 });
                 if (config.defaultRoutePath) {
