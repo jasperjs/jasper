@@ -6,7 +6,9 @@ declare module jasper.core {
         /**
          * System path to the component/service etc.
          */
-        path: string;
+        folder: string;
+        scripts: string[];
+        styles: string[];
     }
 }
 declare module jasper.core {
