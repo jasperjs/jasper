@@ -30,3 +30,6 @@ module jasper {
             }]);
 }
 
+declare module 'jasper' {
+    export = jsp;
+}
