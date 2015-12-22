@@ -12,7 +12,7 @@
         }
 
         register(component:IHtmlDecoratorDefinition) {
-            if(this.interceptor){
+            if (this.interceptor) {
                 this.interceptor.onRegister(component);
             }
             var ddo = this.createDirectiveFor(component);
@@ -75,9 +75,11 @@
                         }
                     }
                 }
+            };
+
+            if (typeof def.priority !== 'undefined') {
+                directive.priority = def.priority;
             }
-
-
             return directive;
         }
 

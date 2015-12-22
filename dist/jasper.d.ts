@@ -325,7 +325,7 @@ declare module jasper.core {
          * Contains decorator logic
          * Instance of this object will be available as 'vm' object in the template.
          */
-        ctrl: any;
+        ctrl?: any;
         ctor?: any;
         /**
          * Setup that this decorator needs a dependency of another component or decorator within html element.
@@ -361,6 +361,7 @@ declare module jasper.core {
          * <element decorator on-change="someMethod()"></element>
          */
         events?: string[];
+        priority?: number;
         /**
          * Infomation for jDebug
          */
@@ -396,7 +397,7 @@ declare module jasper.core {
         /**
          * Setup filter's class constructor
          */
-        ctor: any;
+        ctor?: any;
     }
 }
 declare module jasper.core {
@@ -408,7 +409,7 @@ declare module jasper.core {
         /**
          * Setup service constructor
          */
-        ctor: any;
+        ctor?: any;
     }
 }
 declare module jasper.core {
@@ -665,6 +666,6 @@ declare module jasper {
 declare var jsp: jasper.IJasperStatic;
 declare module jasper {
 }
-declare module 'jasper' {
-    export = jsp;
+declare module 'jasperjs' {
+    export = jasper;
 }

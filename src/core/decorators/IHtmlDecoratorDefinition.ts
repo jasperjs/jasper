@@ -10,7 +10,7 @@
          * Contains decorator logic
          * Instance of this object will be available as 'vm' object in the template.
          */
-        ctrl: any;
+        ctrl?: any;
         // same as ctrl
         ctor?: any;
         /**
@@ -49,6 +49,8 @@
          * <element decorator on-change="someMethod()"></element>
          */
         events?: string[];
+
+        priority?: number;
 
         /**
          * Infomation for jDebug

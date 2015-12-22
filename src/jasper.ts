@@ -30,6 +30,8 @@ module jasper {
             }]);
 }
 
-declare module 'jasper' {
-    export = jsp;
+window['jasper'] = jasper;
+
+declare module 'jasperjs' {
+    export = jasper;
 }

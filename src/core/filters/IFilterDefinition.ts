@@ -7,6 +7,6 @@
         /**
          * Setup filter's class constructor
          */
-        ctor: any;
+        ctor?: any;
     }
 } 

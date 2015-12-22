@@ -351,6 +351,9 @@ var jasper;
                         }
                     };
                 };
+                if (typeof def.priority !== 'undefined') {
+                    directive.priority = def.priority;
+                }
                 return directive;
             };
             HtmlDecoratorRegistrar.prototype.getRequirementsForComponent = function (component) {
@@ -1194,6 +1197,7 @@ var jasper;
         window['jsp'].setup($templateCache, jasperAreasService);
     }]);
 })(jasper || (jasper = {}));
+window['jasper'] = jasper;
 // CORE
 /// <reference path="core/IJDebugInfo.ts" />
 /// <reference path="core/IDirectiveInterceptor.ts" />

@@ -7,6 +7,6 @@
         /**
          * Setup service constructor
          */
-        ctor: any;
+        ctor?: any;
     }
 } 
