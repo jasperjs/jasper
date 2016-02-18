@@ -34,6 +34,7 @@
                 throw new Error(def.name + ' must specify constructor');
             }
             directive.controller = JasperDirectiveWrapperFactory(ctrl, this.utility.extractAttributeBindings(def), this.utility, false);
+            directive.priority = def.priority;
             directive.require = this.getRequirementsForComponent(def);
 
             directive.compile = (tElement:JQuery) => {
