@@ -120,7 +120,7 @@
     // Object load areas
     export class JasperAreasService {
 
-        static $inject = ['$q'];
+        static $inject = ['$q', '$rootScope'];
         /**
          * Client-side areas configuration
          */
@@ -134,7 +134,8 @@
 
         q:ng.IQService;
 
-        constructor($q:ng.IQService) {
+        constructor($q:ng.IQService,
+                    private rootScope:ng.IScope) {
             this.resourceManager = new JasperResourcesManager();
             this.q = $q;
             this.loadiingAreas = new LoadingAreasIdleCollection(this.q);
@@ -198,6 +199,7 @@
 
             var defer = this.q.defer();
             var allDependenciesLoaded = ()=> {
+                this.rootScope.$broadcast("gettingNewScript", 0);
                 //all dependencies loaded
                 if (this.isAreaLoaded(areas)) {
                     defer.resolve();
@@ -220,6 +222,7 @@
                 }
             };
             if (allDependencies.length) {
+                this.rootScope.$broadcast("gettingNewScript", allDependencies.length);
                 this.q.all(allDependencies).then(allDependenciesLoaded);
             } else {
                 allDependenciesLoaded();
