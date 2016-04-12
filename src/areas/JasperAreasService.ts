@@ -120,7 +120,7 @@
     // Object load areas
     export class JasperAreasService {
 
-        static $inject = ['$q'];
+        static $inject = ['$q', '$rootScope'];
         /**
          * Client-side areas configuration
          */
@@ -134,7 +134,8 @@
 
         q:ng.IQService;
 
-        constructor($q:ng.IQService) {
+        constructor($q:ng.IQService,
+                    private rootScope:ng.IScope) {
             this.resourceManager = new JasperResourcesManager();
             this.q = $q;
             this.loadiingAreas = new LoadingAreasIdleCollection(this.q);
@@ -198,6 +199,7 @@
 
             var defer = this.q.defer();
             var allDependenciesLoaded = ()=> {
+
                 //all dependencies loaded
                 if (this.isAreaLoaded(areas)) {
                     defer.resolve();
@@ -207,11 +209,13 @@
                     this.loadiingAreas.onAreaLoaded(areas).then(()=>defer.resolve());
                 } else {
                     // mark area as loading now
+                    this.rootScope.$broadcast("jasperAreaLoading", areas);
                     this.loadiingAreas.startLoading(areas);
                     this.resourceManager.makeAccessible(
                         this.prepareUrls(section.scripts),
                         this.prepareUrls(section.styles),
                         () => {
+                            this.rootScope.$broadcast("jasperAreaLoaded", areas);
                             // notify all subscribers that area is loaded
                             this.loadiingAreas.notifyOnLoaded(areas);
                             this.loadedAreas.push(areas);
@@ -220,6 +224,7 @@
                 }
             };
             if (allDependencies.length) {
+
                 this.q.all(allDependencies).then(allDependenciesLoaded);
             } else {
                 allDependenciesLoaded();
