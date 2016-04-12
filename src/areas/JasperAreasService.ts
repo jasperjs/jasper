@@ -199,7 +199,7 @@
 
             var defer = this.q.defer();
             var allDependenciesLoaded = ()=> {
-                this.rootScope.$broadcast("gettingNewScript", 0);
+
                 //all dependencies loaded
                 if (this.isAreaLoaded(areas)) {
                     defer.resolve();
@@ -209,11 +209,13 @@
                     this.loadiingAreas.onAreaLoaded(areas).then(()=>defer.resolve());
                 } else {
                     // mark area as loading now
+                    this.rootScope.$broadcast("jasperAreaLoading", areas);
                     this.loadiingAreas.startLoading(areas);
                     this.resourceManager.makeAccessible(
                         this.prepareUrls(section.scripts),
                         this.prepareUrls(section.styles),
                         () => {
+                            this.rootScope.$broadcast("jasperAreaLoaded", areas);
                             // notify all subscribers that area is loaded
                             this.loadiingAreas.notifyOnLoaded(areas);
                             this.loadedAreas.push(areas);
@@ -222,7 +224,7 @@
                 }
             };
             if (allDependencies.length) {
-                this.rootScope.$broadcast("gettingNewScript", allDependencies.length);
+
                 this.q.all(allDependencies).then(allDependenciesLoaded);
             } else {
                 allDependenciesLoaded();
