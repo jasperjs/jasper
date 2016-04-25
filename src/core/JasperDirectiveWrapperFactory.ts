@@ -27,7 +27,7 @@ module jasper.core {
             }
             // subscribe on scope destroying:
             var onDestroy = function () {
-                if (onNewScopeDestroyed.length) {
+                if (onNewScopeDestroyed && onNewScopeDestroyed.length) {
                     for (var i = 0; i < onNewScopeDestroyed.length; i++) {
                         onNewScopeDestroyed[i]();
                     }
